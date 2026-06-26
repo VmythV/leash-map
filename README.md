@@ -34,6 +34,8 @@ Completed planning documents:
 - MVP-side development scope
 - MVP hardware preparation checklist
 - Code development scope before hardware is ready
+- MVP build TODOLIST
+- MVP detailed design documents
 
 There is no production application code yet. The recommended next step is to build the first runnable demo with a device simulator, cloud APIs, and an App prototype.
 
@@ -141,6 +143,13 @@ docs/         Product, technical, and decision documents
 | [docs/technical-plan.md](docs/technical-plan.md) | Full technical plan, hardware direction, cloud architecture, App, dashboard, data model, acceptance criteria |
 | [docs/mvp-development-scope.md](docs/mvp-development-scope.md) | MVP development areas, boundaries, deferred areas, acceptance criteria |
 | [docs/mvp-preparation-and-code-scope.md](docs/mvp-preparation-and-code-scope.md) | Hardware checklist, code scope, parallel development plan, first tasks |
+| [docs/TODOLIST.md](docs/TODOLIST.md) | End-to-end MVP build checklist |
+| [docs/detailed-design/README.md](docs/detailed-design/README.md) | Detailed design index for MVP areas |
+| [docs/detailed-design/hardware.md](docs/detailed-design/hardware.md) | Hardware detailed design |
+| [docs/detailed-design/firmware.md](docs/detailed-design/firmware.md) | Firmware detailed design |
+| [docs/detailed-design/cloud.md](docs/detailed-design/cloud.md) | Cloud detailed design |
+| [docs/detailed-design/app.md](docs/detailed-design/app.md) | User App detailed design |
+| [docs/detailed-design/device-simulator.md](docs/detailed-design/device-simulator.md) | Device simulator detailed design |
 
 ## Recommended Execution Plan
 
@@ -163,4 +172,3 @@ docs/         Product, technical, and decision documents
 - Validate location, trail, geofence, and alert loops first.
 - Use development boards and engineering prototypes before mass-production miniaturization.
 - Let software development move ahead with a device simulator.
-

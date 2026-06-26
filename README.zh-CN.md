@@ -40,6 +40,8 @@
 - 最小 MVP 端侧开发划分
 - MVP 硬件准备清单
 - 硬件未就绪前可先写的代码范围
+- MVP 构建 TODOLIST
+- MVP 各端详细设计文档
 
 当前还没有正式应用代码。下一步建议先用设备模拟器、云端 API 和 App 原型跑通第一版可运行演示。
 
@@ -147,6 +149,13 @@ docs/         产品、技术和决策文档
 | [docs/technical-plan.md](docs/technical-plan.md) | 完整技术方案、硬件路线、云端架构、App、后台、数据模型、验收标准 |
 | [docs/mvp-development-scope.md](docs/mvp-development-scope.md) | MVP 四端划分、各端边界、暂缓端侧、验收标准 |
 | [docs/mvp-preparation-and-code-scope.md](docs/mvp-preparation-and-code-scope.md) | 硬件准备清单、可先写代码、并行开发方式、首轮任务 |
+| [docs/TODOLIST.md](docs/TODOLIST.md) | 构建 MVP 的端到端任务清单 |
+| [docs/detailed-design/README.md](docs/detailed-design/README.md) | MVP 详细设计索引 |
+| [docs/detailed-design/hardware.md](docs/detailed-design/hardware.md) | 硬件端详细设计 |
+| [docs/detailed-design/firmware.md](docs/detailed-design/firmware.md) | 固件端详细设计 |
+| [docs/detailed-design/cloud.md](docs/detailed-design/cloud.md) | 云端详细设计 |
+| [docs/detailed-design/app.md](docs/detailed-design/app.md) | 用户 App 详细设计 |
+| [docs/detailed-design/device-simulator.md](docs/detailed-design/device-simulator.md) | 设备模拟器详细设计 |
 
 ## 推荐执行顺序
 
@@ -169,4 +178,3 @@ docs/         产品、技术和决策文档
 - 首先验证定位、轨迹、围栏、告警闭环。
 - 在量产小型化前，先使用开发板和工程样机验证。
 - 软件可以通过设备模拟器先行开发。
-
