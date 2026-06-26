@@ -1,145 +1,182 @@
-# 领迹 LeashMap
+# LeashMap / 领迹
 
-**领迹 / LeashMap** 是一款面向宠物家庭与宠物机构的智能定位品牌，核心定位是：
+![Status](https://img.shields.io/badge/status-MVP%20planning-blue)
+![Scope](https://img.shields.io/badge/scope-pet%20tracking%20system-green)
+![Docs](https://img.shields.io/badge/docs-product%20%26%20technical%20planning-lightgrey)
 
-> 宠物安全与轨迹可视化系统
+LeashMap, also named **领迹** in Chinese, is a pet safety and movement-trail visualization system.
 
-产品通过项圈内置或外挂式定位设备采集宠物实时位置与运动轨迹，并在 App 与云端中完成位置追踪、轨迹回放、安全提醒与数据可视化。
+**中文说明：** 领迹是一款宠物安全与轨迹可视化系统，通过项圈内置或外挂式定位设备采集宠物实时位置与运动轨迹，并在 App 与云端中完成位置追踪、轨迹回放、安全提醒与数据可视化。
 
-品牌口号：
+> Brand tagline: See every step they take.  
+> 品牌口号：看见它的每一步。
 
-> 看见它的每一步
+## Overview
 
-## 当前阶段
+LeashMap is designed for pet families and pet-related organizations. The product is not positioned as a simple Bluetooth anti-loss tag. It is intended to become a full pet location and trail data system.
 
-本仓库当前处于产品定义与 MVP 方案阶段，已完成：
+**中文说明：** 领迹不是“宠物版 AirTag”，而是围绕实时定位、历史轨迹、电子围栏、安全提醒和云端可视化构建的宠物位置数据系统。
 
-- 品牌设定
-- 产品技术方案
-- 最小 MVP 端侧开发划分
-- MVP 硬件准备清单
-- 可立即开始的代码开发范围
+Core capabilities:
 
-当前还没有正式应用代码。下一步应先用设备模拟器、云端 API 和 App 原型跑通最小闭环。
+- Real-time pet location
+- Historical trail playback
+- Geofence and safety alerts
+- Battery, online status, and location accuracy display
+- Motion and activity data
+- Cloud-based location and trail storage
 
-## MVP 范围
+## Project Status
 
-最小 MVP 先做四块：
+This repository is currently in the product definition and MVP planning stage.
 
-| 端侧 | 核心职责 |
-| --- | --- |
-| 硬件端 | 定位器结构、电路、GNSS、4G、天线、电池、防水、充电 |
-| 固件端 | 定位采集、低功耗策略、数据上报、离线缓存、设备状态、OTA 基础能力 |
-| 云端 | 设备接入、位置存储、轨迹处理、电子围栏、告警、用户/宠物/设备 API |
-| 用户 App | 设备绑定、实时位置、轨迹回放、电子围栏、告警通知、寻宠模式 |
+Completed planning documents:
 
-暂缓内容：
+- Brand definition
+- Product technical plan
+- MVP-side development scope
+- MVP hardware preparation checklist
+- Code development scope before hardware is ready
 
-- 完整管理端 / 领迹 Vision
-- B 端多组织权限
-- Fleet / Shelter / Park 等 B 端产品线
-- 商城、会员、社区、宠物健康分析
-- RTK 厘米级定位和极致小型化 Mini 量产结构
+There is no production application code yet. The recommended next step is to build the first runnable demo with a device simulator, cloud APIs, and an App prototype.
 
-## 技术路线
+**中文说明：** 当前仓库还没有正式应用代码，建议先用设备模拟器、云端 API 和 App 原型跑通最小闭环。
 
-硬件主方案：
+## MVP Scope
 
-```text
-4G Cat 1 bis + 双频多星座 GNSS + 低功耗 IMU + MCU + 云端 OTA
-```
+The minimum MVP includes four development areas:
 
-软件主方案：
+| Area | Responsibility | 中文说明 |
+| --- | --- | --- |
+| Hardware | Tracker structure, circuit, GNSS, 4G, antenna, battery, waterproofing, charging | 硬件端：定位器结构、电路、定位、通信、天线、电池、防水和充电 |
+| Firmware | Location collection, low-power strategy, data upload, offline cache, device status, basic OTA | 固件端：定位采集、低功耗策略、数据上报、离线缓存、设备状态和基础 OTA |
+| Cloud | Device access, location storage, trail processing, geofence, alerts, user/pet/device APIs | 云端：设备接入、位置存储、轨迹处理、电子围栏、告警和 API |
+| User App | Device binding, real-time location, trail playback, geofence, notifications, lost-pet mode | 用户 App：设备绑定、实时位置、轨迹回放、安全区域、提醒和寻宠模式 |
 
-```text
-定位器
-  -> 固件低功耗处理并上报
-  -> 云端接收、存储、处理轨迹与告警
-  -> 用户 App 查看宠物位置、轨迹和安全提醒
-```
+Deferred for later stages:
 
-推荐先做一版可运行演示：
+- Full admin dashboard / LeashMap Vision
+- B2B multi-organization permissions
+- Fleet / Shelter / Park product lines
+- Store, subscription, community, and pet health analysis
+- RTK centimeter-level positioning
+- Ultra-miniaturized mass-production Mini hardware
 
-1. 设备模拟器持续上报一条宠物移动路线。
-2. 云端保存定位点。
-3. App 地图实时显示宠物位置。
-4. App 可以回放历史轨迹。
-5. 用户设置圆形安全区域。
-6. 模拟器走出安全区域后，App 收到离区提醒。
+## Technical Direction
 
-## 硬件准备
-
-P0 阶段建议先准备开发验证硬件：
-
-- 4G Cat 1 bis 开发板
-- 双频 GNSS 评估板
-- MCU 开发板
-- LIS2DW12 或同级低功耗 IMU 模块
-- LTE/GNSS 天线和转接线
-- 测试 SIM 卡，建议至少两个运营商
-- 500-700mAh 锂电池、充电模块、电量计模块
-- USB-TTL 串口、ST-Link/J-Link、万用表、可调电源、功耗分析工具
-- 项圈和简易外壳材料，用于外场佩戴测试
-
-P1 阶段再进入自研 PCB、3D 打印外壳、防水结构、磁吸充电和工程样机。
-
-## 可先写代码的部分
-
-真实硬件未到位前，可以先开发：
-
-- 设备模拟器
-- 云端 API
-- 数据库迁移
-- 定位点上报接口
-- 最新位置查询接口
-- 历史轨迹查询接口
-- 圆形电子围栏算法
-- 离区、低电、离线告警
-- App 地图首页
-- App 轨迹回放
-- App 安全区域设置
-- 固件状态机框架
-- 固件数据上报协议封装
-
-建议初始目录规划：
+Recommended hardware direction:
 
 ```text
-app/          用户 App
-server/       云端服务
-simulator/    设备模拟器
-firmware/     固件代码
-scripts/      运维和测试脚本
-tests/        自动化测试
-docs/         产品、技术和决策文档
+4G Cat 1 bis + dual-band multi-constellation GNSS + low-power IMU + MCU + cloud OTA
 ```
 
-## 文档导航
+Recommended software flow:
 
-| 文档 | 内容 |
-| --- | --- |
-| [docs/brand.md](docs/brand.md) | 品牌名称、定位、价值观、目标用户、产品命名体系 |
-| [docs/technical-plan.md](docs/technical-plan.md) | 完整产品技术方案、硬件路线、云端架构、App、后台、数据模型、验收标准 |
-| [docs/mvp-development-scope.md](docs/mvp-development-scope.md) | MVP 四端划分、各端边界、暂缓端侧、验收标准 |
-| [docs/mvp-preparation-and-code-scope.md](docs/mvp-preparation-and-code-scope.md) | 硬件准备清单、可先写的代码、并行开发方式、首轮任务 |
+```text
+Tracker
+  -> Firmware collects and uploads low-power location data
+  -> Cloud receives, stores, processes trails and alerts
+  -> User App displays location, trail history, and safety alerts
+```
 
-## 推荐执行顺序
+**中文说明：** 硬件优先选择中成本、低功耗、定位较精准的方案；软件优先打通“设备上报 -> 云端处理 -> App 展示和提醒”的闭环。
 
-1. 采购开发验证硬件。
-2. 定义设备上报协议和 App API。
-3. 实现设备模拟器。
-4. 实现云端定位点接入与存储。
-5. 实现 App 地图首页。
-6. 实现轨迹回放。
-7. 实现圆形电子围栏和告警。
-8. 接入真实开发板数据。
-9. 做小规模外场测试。
-10. 根据功耗、定位漂移和告警误报结果修正硬件与算法。
+## First Runnable Demo
 
-## 核心原则
+The first demo does not require production hardware. It should prove the core system loop:
 
-- 不做“宠物版 AirTag”，而是做宠物安全与轨迹数据系统。
-- 不承诺 100% 找回、永不丢失、零误差定位。
-- 首版先验证定位、轨迹、围栏、告警这个核心闭环。
-- 硬件先用开发板和工程样机验证，不急于量产小型化。
-- 软件可以通过设备模拟器先行，减少等待硬件的时间。
+1. A device simulator uploads a moving pet route.
+2. The cloud stores location points.
+3. The App displays the pet's real-time location on a map.
+4. The App can replay historical trails.
+5. A user can create a circular safe zone.
+6. The App receives an alert when the simulated device leaves the safe zone.
+
+**中文说明：** 第一版演示可以先不接真实硬件，用设备模拟器验证云端和 App 的完整链路。
+
+## Hardware Preparation
+
+Recommended P0 hardware for development validation:
+
+- 4G Cat 1 bis development board
+- Dual-band GNSS evaluation board
+- MCU development board
+- LIS2DW12 or equivalent low-power IMU module
+- LTE/GNSS antennas and adapter cables
+- Test SIM cards from at least two carriers
+- 500-700mAh lithium batteries
+- Charging module and fuel gauge module
+- USB-TTL adapter, ST-Link/J-Link, multimeter, adjustable power supply, power profiler
+- Collar samples and simple enclosure materials for field testing
+
+P1 should move to custom PCB, 3D-printed enclosure, waterproof structure, magnetic charging, and engineering prototypes.
+
+**中文说明：** P0 先买开发板和测试工具，不建议一开始就直接投入量产结构。
+
+## Software Work That Can Start Now
+
+These parts can be implemented before real hardware is ready:
+
+- Device simulator
+- Cloud APIs
+- Database migrations
+- Location upload endpoint
+- Latest location query
+- Historical trail query
+- Circular geofence algorithm
+- Exit-zone, low-battery, and offline alerts
+- App map home screen
+- App trail playback
+- App safe-zone settings
+- Firmware state-machine skeleton
+- Firmware data-upload protocol wrapper
+
+Recommended initial repository layout:
+
+```text
+app/          User App
+server/       Cloud services
+simulator/    Device simulator
+firmware/     Firmware code
+scripts/      Operation and testing scripts
+tests/        Automated tests
+docs/         Product, technical, and decision documents
+```
+
+**中文说明：** 在硬件未完全到位前，可以先写设备模拟器、云端接口、App 原型和固件状态机框架。
+
+## Documentation
+
+| Document | Description | 中文说明 |
+| --- | --- | --- |
+| [docs/brand.md](docs/brand.md) | Brand name, positioning, values, target users, product naming system | 品牌名称、定位、价值观、目标用户、产品命名体系 |
+| [docs/technical-plan.md](docs/technical-plan.md) | Full technical plan, hardware direction, cloud architecture, App, dashboard, data model, acceptance criteria | 完整技术方案、硬件路线、云端架构、App、后台、数据模型、验收标准 |
+| [docs/mvp-development-scope.md](docs/mvp-development-scope.md) | MVP development areas, boundaries, deferred areas, acceptance criteria | MVP 四端划分、各端边界、暂缓端侧、验收标准 |
+| [docs/mvp-preparation-and-code-scope.md](docs/mvp-preparation-and-code-scope.md) | Hardware checklist, code scope, parallel development plan, first tasks | 硬件准备清单、可先写代码、并行开发方式、首轮任务 |
+
+## Recommended Execution Plan
+
+1. Prepare development validation hardware.
+2. Define the device upload protocol and App APIs.
+3. Implement the device simulator.
+4. Implement cloud location ingestion and storage.
+5. Implement the App map home screen.
+6. Implement trail playback.
+7. Implement circular geofence and alerts.
+8. Connect real development-board data.
+9. Run small-scale field tests.
+10. Refine hardware, power strategy, location filtering, and alert logic based on test results.
+
+**中文说明：** 推荐先用模拟器跑通软件闭环，再接真实开发板，最后进入工程样机和外场测试。
+
+## Product Principles
+
+- Do not build a simple pet AirTag clone.
+- Build a pet safety and trail data system.
+- Do not claim 100% recovery, never-lost, or zero-error location.
+- Validate location, trail, geofence, and alert loops first.
+- Use development boards and engineering prototypes before mass-production miniaturization.
+- Let software development move ahead with a device simulator.
+
+**中文说明：** 首版重点是验证定位、轨迹、围栏、告警闭环；不做夸张承诺，也不急于量产小型化。
 
