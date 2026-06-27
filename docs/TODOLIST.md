@@ -29,7 +29,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
   - [x] `docs/`
 - [x] Choose MVP technology stack for cloud service. (Python 3.12 + FastAPI + SQLAlchemy/SQLite; PostgreSQL later)
 - [x] Choose MVP technology stack for user App. (Flutter + provider + http; Web first)
-- [ ] Choose MVP firmware toolchain.
+- [~] Choose MVP firmware toolchain. (C/clang for host-testable core; MCU toolchain TBD at dev-board stage)
 - [x] Define environment naming: (docs/api/README.md)
   - [x] local
   - [x] dev
@@ -147,7 +147,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 - [x] Store motion state.
 - [x] Implement latest location cache. (latest_for_pet query)
 - [x] Implement trail point query by time range.
-- [ ] Implement simple trail downsampling. (param accepted; not yet applied)
+- [x] Implement simple trail downsampling. (Douglas-Peucker when ?downsample=true)
 - [x] Implement circular geofence containment check. (haversine)
 - [x] Implement geofence exit debounce.
 - [x] Implement geofence re-entry detection. (resolves on re-entry)
@@ -161,9 +161,9 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 - [x] Implement latest-location realtime push. (location.updated)
 - [x] Implement alert realtime push. (alert.created)
 - [x] Implement reconnect handling. (App falls back; SSE Last-Event-ID documented)
-- [ ] Implement basic notification service abstraction.
-- [ ] Add placeholder push provider for local development.
-- [ ] Add alert delivery status.
+- [x] Implement basic notification service abstraction. (notifications.py)
+- [x] Add placeholder push provider for local development. (ConsoleProvider)
+- [x] Add alert delivery status. (notification_deliveries table)
 - [x] Implement alert acknowledgement API. (/v1/alerts/{id}/ack)
 
 ## 9. Phase 7: User App MVP
@@ -193,29 +193,32 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 
 ## 10. Phase 8: Firmware Skeleton
 
-- [ ] Create `firmware/` project.
-- [ ] Set up firmware build toolchain.
-- [ ] Define firmware module boundaries.
-- [ ] Implement device state machine:
-  - [ ] boot
-  - [ ] provisioning
-  - [ ] idle
-  - [ ] tracking
-  - [ ] guard
-  - [ ] lost
-  - [ ] low battery
-  - [ ] OTA
-  - [ ] fault recovery
+> Pure-logic skeleton done in C (host-testable, make test → 66 checks).
+> Hardware driver abstractions come with dev-board integration (Phase 9).
+
+- [x] Create `firmware/` project.
+- [x] Set up firmware build toolchain. (clang host build via Makefile; MCU toolchain TBD)
+- [x] Define firmware module boundaries.
+- [x] Implement device state machine:
+  - [x] boot
+  - [x] provisioning
+  - [x] idle
+  - [x] tracking
+  - [x] guard
+  - [x] lost
+  - [x] low battery
+  - [x] OTA
+  - [x] fault recovery
 - [ ] Implement modem abstraction.
 - [ ] Implement GNSS abstraction.
 - [ ] Implement IMU abstraction.
 - [ ] Implement battery abstraction.
-- [ ] Implement local storage queue abstraction.
-- [ ] Implement data payload serialization.
+- [x] Implement local storage queue abstraction. (lm_cache ring buffer)
+- [x] Implement data payload serialization. (lm_protocol)
 - [ ] Implement upload retry strategy.
 - [ ] Implement serial logging.
-- [ ] Implement configuration storage.
-- [ ] Add unit-testable pure logic for state transitions.
+- [ ] Implement configuration storage. (lm_config struct; persistence TBD)
+- [x] Add unit-testable pure logic for state transitions.
 
 ## 11. Phase 9: Development Board Integration
 

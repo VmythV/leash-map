@@ -11,6 +11,7 @@ from typing import Optional
 from .broker import Broker
 from .config import settings
 from .geo import haversine_m
+from .notifications import notifier
 from .schemas import LocationPoint
 from .store import AlertRecord, LocationRecord, Store, to_iso, utcnow
 
@@ -55,6 +56,8 @@ def _create_alert(
         "created_at": to_iso(alert.created_at),
         "location_point_id": location_point_id,
     })
+    # out-of-band channels (records a delivery status per channel)
+    notifier.dispatch(store, alert)
     return alert
 
 

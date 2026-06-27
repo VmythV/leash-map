@@ -96,7 +96,7 @@ def test_full_loop():
     # trail returns all 3 unique points
     trail = c.get(
         f"/v1/pets/{pet_id}/trail",
-        params={"from": "2026-06-26T00:00:00Z", "to": "2026-06-28T00:00:00Z"},
+        params={"from": "2026-06-26T00:00:00Z", "to": "2026-06-28T00:00:00Z", "downsample": "false"},
         headers=app_h,
     ).json()
     assert trail["point_count"] == 3

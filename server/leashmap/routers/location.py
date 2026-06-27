@@ -5,8 +5,9 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
+from ..config import settings
 from ..deps import app_auth, get_store
-from ..geo import haversine_m
+from ..geo import douglas_peucker, haversine_m
 from ..schemas import LatestLocation, Trail, User
 from ..store import to_iso
 from ..web import owned_pet, to_app_location, to_device_status
@@ -38,9 +39,14 @@ def trail(
     owned_pet(store, user, pet_id)
     recs = store.trail(pet_id, from_, to)
 
+    # distance is computed on the full-resolution trail
     distance = 0.0
     for a, b in zip(recs, recs[1:]):
         distance += haversine_m(a.lat, a.lng, b.lat, b.lng)
+
+    if downsample and len(recs) > 2:
+        keep = douglas_peucker([(r.lat, r.lng) for r in recs], settings.trail_downsample_epsilon_m)
+        recs = [recs[i] for i in keep]
 
     return Trail(
         pet_id=pet_id,

@@ -59,7 +59,8 @@ leashmap/
   ids.py         带前缀 ID 生成
   geo.py         haversine 距离（PostGIS 的临时替代）
   broker.py      SSE 进程内 pub/sub（Redis 占位）
-  services.py    接入流水线、围栏防误报、告警评估
+  services.py    接入流水线、围栏防误报、告警评估、离线扫描
+  notifications.py 通知通道抽象 + ConsoleProvider + 投递状态
   web.py         App 路由公共助手（归属校验、记录→响应转换）
   routers/
     device.py    /v1/device/*      设备上行（鉴权：设备 token）
@@ -104,12 +105,14 @@ tests/
 
 ## MVP 现状与后续
 
-已实现：设备鉴权、单点/批量接入、心跳、事件、最新位置、轨迹、圆形围栏 CRUD、
-离区防误报告警、低电告警、**离线告警（后台扫描）**、SSE 实时推送、
-**实时地图 demo**、demo 会话、SQLite 持久化、**Alembic 迁移**。
+已实现：设备鉴权、单点/批量接入、心跳、事件、最新位置、轨迹（**Douglas-Peucker 抽稀**）、
+圆形围栏 CRUD、离区防误报告警、低电告警、离线告警（后台扫描）、
+**通知通道抽象 + 投递状态**、SSE 实时推送、实时地图 demo、demo 会话、
+SQLite 持久化、Alembic 迁移。
 
 后续：
 - [ ] 启动改用 `alembic upgrade head`（当前仍 `create_all`）
 - [ ] 换 PostgreSQL（仅改 `LEASHMAP_DATABASE_URL`）
+- [ ] 真实推送通道（APNs/FCM/短信）替换 ConsoleProvider
 - [ ] 下行命令实际入队（寻宠模式 set_mode）
 - [ ] 持久化的设备 token / 证书

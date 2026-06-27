@@ -34,5 +34,8 @@ class Settings(BaseSettings):
     offline_threshold_seconds: int = 900
     offline_scan_interval_seconds: int = 30
 
+    # Trail simplification (Douglas-Peucker) applied when ?downsample=true.
+    trail_downsample_epsilon_m: float = 8.0
+
 
 settings = Settings()

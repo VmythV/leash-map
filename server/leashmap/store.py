@@ -20,6 +20,7 @@ from .db import (
     DeviceStatusRow,
     GeofenceRow,
     LocationRow,
+    NotificationDeliveryRow,
     PetRow,
     SessionRow,
     UserRow,
@@ -350,6 +351,22 @@ class Store:
                 row.acknowledged_at = acknowledged_at
             s.commit()
             return _alert(row)
+
+    # ---- notification deliveries ----
+    def record_delivery(self, alert_id: str, user_id: str, channel: str, status: str) -> None:
+        with db.SessionLocal() as s:
+            s.add(NotificationDeliveryRow(
+                alert_id=alert_id, user_id=user_id, channel=channel,
+                status=status, created_at=utcnow(),
+            ))
+            s.commit()
+
+    def deliveries_for_alert(self, alert_id: str) -> List[dict]:
+        with db.SessionLocal() as s:
+            rows = s.scalars(
+                select(NotificationDeliveryRow).where(NotificationDeliveryRow.alert_id == alert_id)
+            ).all()
+            return [{"channel": r.channel, "status": r.status, "created_at": to_iso(r.created_at)} for r in rows]
 
 
 store = Store()

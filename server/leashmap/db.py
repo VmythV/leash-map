@@ -112,6 +112,16 @@ class DeviceEventRow(Base):
     data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
 
+class NotificationDeliveryRow(Base):
+    __tablename__ = "notification_deliveries"
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    alert_id: Mapped[str] = mapped_column(String, index=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    channel: Mapped[str] = mapped_column(String)
+    status: Mapped[str] = mapped_column(String)  # sent | failed
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 def _make_engine(url: str):
     is_sqlite = url.startswith("sqlite")
     kwargs: dict = {}
