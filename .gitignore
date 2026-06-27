@@ -1,0 +1,47 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# --- Secrets / Env ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Logs / Tmp ---
+*.log
+logs/
+tmp/
+.cache/
+
+# --- Node / App (Flutter, JS) ---
+node_modules/
+dist/
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+
+# --- Python (simulator/server 视选型而定) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Go (server 视选型而定) ---
+bin/
+*.test
+
+# --- Rust / Embedded (firmware 视选型而定) ---
+target/
+
+# --- Database / Local data ---
+*.sqlite
+*.db
+pgdata/
