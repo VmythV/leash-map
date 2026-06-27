@@ -1,0 +1,15 @@
+{
+  "type": "location",
+  "protocol_version": 1,
+  "device_id": "dev_mvp_001",
+  "seq": 1001,
+  "ts": 1782432000,
+  "lat": 31.2304,
+  "lng": 121.4737,
+  "accuracy_m": 12.0,
+  "source": "gnss",
+  "speed_mps": 1.2,
+  "heading": 86,
+  "battery_pct": 78,
+  "motion_state": "moving"
+}

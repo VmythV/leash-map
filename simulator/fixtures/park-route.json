@@ -1,0 +1,17 @@
+{
+  "name": "park-route",
+  "description": "A short walking loop in a park, ~10 points, WGS84. Used for demo trail + geofence exit.",
+  "default_interval_s": 5,
+  "points": [
+    { "lat": 31.23040, "lng": 121.47370, "accuracy_m": 10, "source": "simulator" },
+    { "lat": 31.23062, "lng": 121.47402, "accuracy_m": 12, "source": "simulator" },
+    { "lat": 31.23085, "lng": 121.47435, "accuracy_m": 11, "source": "simulator" },
+    { "lat": 31.23110, "lng": 121.47460, "accuracy_m": 14, "source": "simulator" },
+    { "lat": 31.23140, "lng": 121.47472, "accuracy_m": 13, "source": "simulator" },
+    { "lat": 31.23172, "lng": 121.47468, "accuracy_m": 18, "source": "simulator" },
+    { "lat": 31.23200, "lng": 121.47440, "accuracy_m": 16, "source": "simulator" },
+    { "lat": 31.23218, "lng": 121.47402, "accuracy_m": 22, "source": "simulator" },
+    { "lat": 31.23210, "lng": 121.47362, "accuracy_m": 20, "source": "simulator" },
+    { "lat": 31.23185, "lng": 121.47338, "accuracy_m": 15, "source": "simulator" }
+  ]
+}

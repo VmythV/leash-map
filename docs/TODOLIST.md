@@ -19,42 +19,45 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 
 ## 2. Phase 0: Project Foundation
 
-- [ ] Create initial repository structure:
-  - [ ] `app/`
-  - [ ] `server/`
-  - [ ] `simulator/`
-  - [ ] `firmware/`
-  - [ ] `scripts/`
-  - [ ] `tests/`
-  - [ ] `docs/`
+- [x] Create initial repository structure:
+  - [x] `app/`
+  - [x] `server/`
+  - [x] `simulator/`
+  - [x] `firmware/`
+  - [x] `scripts/`
+  - [x] `tests/`
+  - [x] `docs/`
 - [ ] Choose MVP technology stack for cloud service.
 - [ ] Choose MVP technology stack for user App.
 - [ ] Choose MVP firmware toolchain.
-- [ ] Define environment naming:
-  - [ ] local
-  - [ ] dev
-  - [ ] staging
-- [ ] Define device ID format.
-- [ ] Define pet ID and user ID strategy.
-- [ ] Define API error format.
+- [x] Define environment naming: (docs/api/README.md)
+  - [x] local
+  - [x] dev
+  - [x] staging
+- [x] Define device ID format. (docs/api/README.md)
+- [x] Define pet ID and user ID strategy. (docs/api/README.md)
+- [x] Define API error format. (docs/api/README.md)
 - [ ] Define logging convention.
 - [ ] Define minimal release naming convention.
 
 ## 3. Phase 1: Protocol and Data Contract
 
-- [ ] Define device upload protocol.
-- [ ] Define location point payload.
-- [ ] Define heartbeat payload.
-- [ ] Define battery status payload.
-- [ ] Define device event payload.
-- [ ] Define offline batch upload payload.
-- [ ] Define cloud command payload.
-- [ ] Define App API contract.
-- [ ] Define WebSocket or SSE real-time event format.
-- [ ] Define geofence alert event format.
-- [ ] Define device binding flow.
-- [ ] Create initial OpenAPI document or equivalent API spec.
-- [ ] Create example request and response fixtures.
+> Done. Source of truth: [docs/api/](detailed-design/../api/) — README.md,
+> device-protocol.md, realtime-events.md, openapi.yaml, examples/.
+
+- [x] Define device upload protocol. (device-protocol.md)
+- [x] Define location point payload. (device-protocol.md §3)
+- [x] Define heartbeat payload. (device-protocol.md §5)
+- [x] Define battery status payload. (folded into heartbeat/location/event, device-protocol.md §5–6)
+- [x] Define device event payload. (device-protocol.md §6)
+- [x] Define offline batch upload payload. (device-protocol.md §4)
+- [x] Define cloud command payload. (device-protocol.md §8)
+- [x] Define App API contract. (openapi.yaml)
+- [x] Define WebSocket or SSE real-time event format. (realtime-events.md — SSE for MVP)
+- [x] Define geofence alert event format. (realtime-events.md §3)
+- [x] Define device binding flow. (README.md)
+- [x] Create initial OpenAPI document or equivalent API spec. (openapi.yaml)
+- [x] Create example request and response fixtures. (docs/api/examples/)
 
 ## 4. Phase 2: Hardware Preparation
 

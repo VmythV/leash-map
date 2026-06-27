@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "accepted": 1,
+  "duplicated": 0,
+  "server_ts": "2026-06-27T08:00:01Z",
+  "commands": [
+    {
+      "command_id": "cmd_44a2f8c1",
+      "type": "set_mode",
+      "params": { "mode": "lost" },
+      "expires_at": 1782433000
+    }
+  ]
+}

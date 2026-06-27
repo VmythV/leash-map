@@ -150,6 +150,7 @@ docs/         Product, technical, and decision documents
 | [docs/detailed-design/cloud.md](docs/detailed-design/cloud.md) | Cloud detailed design |
 | [docs/detailed-design/app.md](docs/detailed-design/app.md) | User App detailed design |
 | [docs/detailed-design/device-simulator.md](docs/detailed-design/device-simulator.md) | Device simulator detailed design |
+| [docs/api/README.md](docs/api/README.md) | API & protocol contract (conventions, device protocol, realtime, OpenAPI) shared by simulator, server, and app |
 
 ## Recommended Execution Plan
 

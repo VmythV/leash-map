@@ -1,0 +1,586 @@
+openapi: 3.1.0
+info:
+  title: LeashMap API
+  version: "1.0.0"
+  description: >
+    LeashMap MVP API — device ingestion + user App.
+    Source of truth for simulator/, server/, and app/.
+    See README.md, device-protocol.md, realtime-events.md for prose.
+servers:
+  - url: http://localhost:8080
+    description: local
+  - url: https://dev-api.leashmap.example
+    description: dev
+  - url: https://staging-api.leashmap.example
+    description: staging
+
+tags:
+  - name: device
+    description: Device → cloud ingestion (device token)
+  - name: auth
+    description: App session
+  - name: pets
+    description: Pets and devices
+  - name: location
+    description: Latest location and trails
+  - name: geofence
+    description: Circular safe zones
+  - name: alerts
+    description: Alerts
+  - name: realtime
+    description: SSE realtime stream
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ---------------- Device ingestion ----------------
+  /v1/device/locations:
+    post:
+      tags: [device]
+      summary: Upload one location point
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationUpload" }
+      responses:
+        "200":
+          description: accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/device/locations/batch:
+    post:
+      tags: [device]
+      summary: Upload offline-cached location points
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LocationBatchUpload" }
+      responses:
+        "200":
+          description: accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/device/heartbeat:
+    post:
+      tags: [device]
+      summary: Upload heartbeat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Heartbeat" }
+      responses:
+        "200":
+          description: accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /v1/device/events:
+    post:
+      tags: [device]
+      summary: Upload a device event (incl. command ack)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceEvent" }
+      responses:
+        "200":
+          description: accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ---------------- App: auth ----------------
+  /v1/auth/demo-session:
+    post:
+      tags: [auth]
+      summary: Create a demo session token
+      security: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name: { type: string, example: "May" }
+      responses:
+        "200":
+          description: session
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, user]
+                properties:
+                  token: { type: string, example: "sess_abc123" }
+                  user: { $ref: "#/components/schemas/User" }
+
+  # ---------------- App: pets & devices ----------------
+  /v1/pets:
+    get:
+      tags: [pets]
+      summary: List pets
+      responses:
+        "200":
+          description: pets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Pet" }
+                  page: { $ref: "#/components/schemas/Page" }
+    post:
+      tags: [pets]
+      summary: Create a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: "Buddy" }
+                species: { type: string, enum: [dog, cat, other], example: dog }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pet" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /v1/devices/bind:
+    post:
+      tags: [pets]
+      summary: Bind a device to a pet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, pet_id]
+              properties:
+                device_id: { type: string, example: "dev_mvp_001" }
+                pet_id: { type: string, example: "pet_2b7d4f10a6c1" }
+      responses:
+        "200":
+          description: bound
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceBinding" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  # ---------------- App: location ----------------
+  /v1/pets/{petId}/location/latest:
+    get:
+      tags: [location]
+      summary: Get latest known location for a pet
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+      responses:
+        "200":
+          description: latest location with device status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LatestLocation" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /v1/pets/{petId}/trail:
+    get:
+      tags: [location]
+      summary: Query a trail by time range
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          example: "2026-06-27T00:00:00Z"
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date-time }
+          example: "2026-06-27T23:59:59Z"
+        - name: downsample
+          in: query
+          required: false
+          schema: { type: boolean, default: true }
+          description: server-side trail simplification
+      responses:
+        "200":
+          description: trail
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Trail" }
+
+  # ---------------- App: geofence ----------------
+  /v1/pets/{petId}/geofences:
+    get:
+      tags: [geofence]
+      summary: List safe zones for a pet
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+      responses:
+        "200":
+          description: geofences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Geofence" }
+    post:
+      tags: [geofence]
+      summary: Create a circular safe zone
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GeofenceCreate" }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Geofence" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  # ---------------- App: alerts ----------------
+  /v1/alerts:
+    get:
+      tags: [alerts]
+      summary: List alerts
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, acknowledged, resolved] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50, maximum: 200 }
+        - name: cursor
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Alert" }
+                  page: { $ref: "#/components/schemas/Page" }
+
+  /v1/alerts/{alertId}/ack:
+    post:
+      tags: [alerts]
+      summary: Acknowledge an alert
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: acknowledged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Alert" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------- App: realtime ----------------
+  /v1/realtime/stream:
+    get:
+      tags: [realtime]
+      summary: SSE realtime event stream
+      description: >
+        Server-Sent Events. See realtime-events.md for event names and data
+        schemas (location.updated, alert.created, device.status_updated,
+        device.battery_updated).
+      parameters:
+        - name: pet_id
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: text/event-stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    petId:
+      name: petId
+      in: path
+      required: true
+      schema: { type: string }
+      example: "pet_2b7d4f10a6c1"
+
+  responses:
+    BadRequest:
+      description: invalid argument
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: resource not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Conflict:
+      description: state conflict
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum: [invalid_argument, unauthenticated, permission_denied, not_found, conflict, rate_limited, internal]
+            message: { type: string }
+            details: { type: object }
+            request_id: { type: string }
+
+    Page:
+      type: object
+      properties:
+        next_cursor: { type: [string, "null"] }
+
+    Source:
+      type: string
+      enum: [gnss, cell, wifi, ble, simulator]
+
+    MotionState:
+      type: string
+      enum: [still, moving, unknown]
+
+    LocationPoint:
+      type: object
+      required: [seq, ts, lat, lng, accuracy_m, source]
+      properties:
+        seq: { type: integer, example: 1001 }
+        ts: { type: integer, description: Unix epoch seconds, example: 1782432000 }
+        lat: { type: number, minimum: -90, maximum: 90, example: 31.2304 }
+        lng: { type: number, minimum: -180, maximum: 180, example: 121.4737 }
+        accuracy_m: { type: number, example: 12.0 }
+        source: { $ref: "#/components/schemas/Source" }
+        speed_mps: { type: number, example: 1.2 }
+        heading: { type: integer, minimum: 0, maximum: 359, example: 86 }
+        battery_pct: { type: integer, minimum: 0, maximum: 100, example: 78 }
+        motion_state: { $ref: "#/components/schemas/MotionState" }
+
+    LocationUpload:
+      allOf:
+        - $ref: "#/components/schemas/LocationPoint"
+        - type: object
+          required: [type, protocol_version, device_id]
+          properties:
+            type: { type: string, const: location }
+            protocol_version: { type: integer, const: 1 }
+            device_id: { type: string, example: "dev_mvp_001" }
+
+    LocationBatchUpload:
+      type: object
+      required: [type, protocol_version, device_id, ts, points]
+      properties:
+        type: { type: string, const: location_batch }
+        protocol_version: { type: integer, const: 1 }
+        device_id: { type: string }
+        ts: { type: integer }
+        points:
+          type: array
+          maxItems: 200
+          items: { $ref: "#/components/schemas/LocationPoint" }
+
+    Heartbeat:
+      type: object
+      required: [type, protocol_version, device_id, ts, battery_pct, mode]
+      properties:
+        type: { type: string, const: heartbeat }
+        protocol_version: { type: integer, const: 1 }
+        device_id: { type: string }
+        ts: { type: integer }
+        battery_pct: { type: integer, minimum: 0, maximum: 100 }
+        mode: { type: string, enum: [idle, tracking, guard, lost, low_battery] }
+        network:
+          type: object
+          properties:
+            type: { type: string, enum: [cat1bis, wifi, simulator] }
+            rssi: { type: integer }
+        firmware_version: { type: string }
+
+    DeviceEvent:
+      type: object
+      required: [type, protocol_version, device_id, ts, event]
+      properties:
+        type: { type: string, const: event }
+        protocol_version: { type: integer, const: 1 }
+        device_id: { type: string }
+        ts: { type: integer }
+        event:
+          type: string
+          enum: [power_on, power_off, charging_start, charging_end, low_battery, mode_changed, fault, command_ack]
+        data: { type: object }
+
+    Command:
+      type: object
+      required: [command_id, type, expires_at]
+      properties:
+        command_id: { type: string, example: "cmd_44a2f8c1" }
+        type: { type: string, enum: [set_mode, set_interval, locate_now, ota] }
+        params: { type: object }
+        expires_at: { type: integer, description: Unix epoch seconds }
+
+    IngestResponse:
+      type: object
+      required: [ok, accepted, server_ts]
+      properties:
+        ok: { type: boolean }
+        accepted: { type: integer }
+        duplicated: { type: integer }
+        server_ts: { type: string, format: date-time }
+        commands:
+          type: array
+          items: { $ref: "#/components/schemas/Command" }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, example: "usr_8f3a1c9b2d4e" }
+        display_name: { type: string }
+
+    Pet:
+      type: object
+      properties:
+        id: { type: string, example: "pet_2b7d4f10a6c1" }
+        name: { type: string }
+        species: { type: string, enum: [dog, cat, other] }
+        device_id: { type: [string, "null"], example: "dev_mvp_001" }
+        last_location_at: { type: [string, "null"], format: date-time }
+
+    DeviceBinding:
+      type: object
+      properties:
+        device_id: { type: string }
+        pet_id: { type: string }
+        bound_at: { type: string, format: date-time }
+
+    DeviceStatus:
+      type: object
+      properties:
+        device_id: { type: string }
+        online: { type: boolean }
+        mode: { type: string, enum: [idle, tracking, guard, lost, low_battery] }
+        battery_pct: { type: integer }
+        last_seen_at: { type: string, format: date-time }
+
+    AppLocation:
+      type: object
+      properties:
+        ts: { type: string, format: date-time }
+        lat: { type: number }
+        lng: { type: number }
+        accuracy_m: { type: number }
+        source: { $ref: "#/components/schemas/Source" }
+        speed_mps: { type: number }
+        heading: { type: integer }
+        motion_state: { $ref: "#/components/schemas/MotionState" }
+
+    LatestLocation:
+      type: object
+      properties:
+        pet_id: { type: string }
+        location: { $ref: "#/components/schemas/AppLocation" }
+        device: { $ref: "#/components/schemas/DeviceStatus" }
+
+    Trail:
+      type: object
+      properties:
+        pet_id: { type: string }
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        point_count: { type: integer }
+        distance_m: { type: number }
+        points:
+          type: array
+          items: { $ref: "#/components/schemas/AppLocation" }
+
+    GeofenceCreate:
+      type: object
+      required: [name, center_lat, center_lng, radius_m]
+      properties:
+        name: { type: string, example: "家" }
+        center_lat: { type: number, example: 31.2304 }
+        center_lng: { type: number, example: 121.4737 }
+        radius_m: { type: number, minimum: 20, example: 150 }
+        enabled: { type: boolean, default: true }
+
+    Geofence:
+      allOf:
+        - $ref: "#/components/schemas/GeofenceCreate"
+        - type: object
+          properties:
+            id: { type: string, example: "geo_5c1e9a3b7f02" }
+            pet_id: { type: string }
+
+    Alert:
+      type: object
+      properties:
+        id: { type: string, example: "alt_91b0c7d3e84a" }
+        pet_id: { type: string }
+        device_id: { type: string }
+        type: { type: string, enum: [exit_zone, low_battery, offline] }
+        severity: { type: string, enum: [info, warning, critical] }
+        status: { type: string, enum: [open, acknowledged, resolved] }
+        message: { type: string }
+        location_point_id: { type: [integer, "null"] }
+        created_at: { type: string, format: date-time }
+        acknowledged_at: { type: [string, "null"], format: date-time }
