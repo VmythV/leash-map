@@ -27,7 +27,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
   - [x] `scripts/`
   - [x] `tests/`
   - [x] `docs/`
-- [ ] Choose MVP technology stack for cloud service.
+- [x] Choose MVP technology stack for cloud service. (Python + FastAPI + Pydantic v2; in-memory store, PostgreSQL/PostGIS later)
 - [ ] Choose MVP technology stack for user App.
 - [ ] Choose MVP firmware toolchain.
 - [x] Define environment naming: (docs/api/README.md)
@@ -103,26 +103,30 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 
 ## 6. Phase 4: Cloud Foundation
 
-- [ ] Create `server/` project.
+> Skeleton done with an in-memory store (FastAPI). DB-backed items below stay
+> open until PostgreSQL/PostGIS is wired in. End-to-end loop verified by
+> `server/tests/test_smoke.py`.
+
+- [x] Create `server/` project.
 - [ ] Add database migration system.
-- [ ] Create users table.
-- [ ] Create pets table.
-- [ ] Create devices table.
-- [ ] Create device bindings table.
-- [ ] Create location points table.
-- [ ] Create geofences table.
-- [ ] Create alerts table.
+- [~] Create users table. (in-memory model; real table pending)
+- [~] Create pets table. (in-memory)
+- [~] Create devices table. (in-memory)
+- [~] Create device bindings table. (in-memory)
+- [~] Create location points table. (in-memory)
+- [~] Create geofences table. (in-memory)
+- [~] Create alerts table. (in-memory)
 - [ ] Create device events table.
-- [ ] Implement device authentication.
-- [ ] Implement location ingestion endpoint.
-- [ ] Implement heartbeat endpoint.
-- [ ] Implement latest location query.
-- [ ] Implement historical trail query.
-- [ ] Implement pet creation API.
-- [ ] Implement device binding API.
-- [ ] Implement circular geofence CRUD.
-- [ ] Implement alert list API.
-- [ ] Implement basic API tests.
+- [x] Implement device authentication.
+- [x] Implement location ingestion endpoint. (+ batch)
+- [x] Implement heartbeat endpoint.
+- [x] Implement latest location query.
+- [x] Implement historical trail query.
+- [x] Implement pet creation API.
+- [x] Implement device binding API.
+- [~] Implement circular geofence CRUD. (create + list; update/disable pending)
+- [x] Implement alert list API.
+- [x] Implement basic API tests. (server/tests/test_smoke.py)
 - [ ] Implement seed script for local demo data.
 
 ## 7. Phase 5: Location and Geofence Processing
