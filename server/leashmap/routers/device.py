@@ -21,8 +21,9 @@ router = APIRouter(prefix="/v1/device", tags=["device"])
 
 
 def _commands(store, device_id: str) -> List[Command]:
-    pending = store.pending_commands.pop(device_id, [])
-    return [Command(**c) for c in pending]
+    # Downlink command queue is deferred (see docs/api/device-protocol.md §8).
+    # MVP always returns an empty list.
+    return []
 
 
 def _resp(store, device_id: str, accepted: int, duplicated: int = 0) -> IngestResponse:
@@ -83,5 +84,6 @@ def event(
     battery = None
     if body.data and isinstance(body.data.get("battery_pct"), int):
         battery = body.data["battery_pct"]
+    store.add_device_event(body.device_id, body.ts, body.event, body.data)
     store.touch_device(body.device_id, battery_pct=battery)
     return _resp(store, body.device_id, accepted=0)

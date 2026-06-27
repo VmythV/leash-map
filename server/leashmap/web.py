@@ -13,7 +13,7 @@ ONLINE_WINDOW = timedelta(minutes=30)
 
 
 def owned_pet(store: Store, user: User, pet_id: str) -> PetRecord:
-    pet = store.pets.get(pet_id)
+    pet = store.get_pet(pet_id)
     if pet is None:
         raise APIError("not_found", "Pet not found")
     if pet.owner_id != user.id:

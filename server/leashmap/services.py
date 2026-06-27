@@ -5,15 +5,13 @@ and docs/api/realtime-events.md.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Optional
 
 from .broker import Broker
 from .config import settings
 from .geo import haversine_m
-from .ids import gen_id
 from .schemas import LocationPoint
-from .store import AlertRecord, GeofenceRecord, LocationRecord, Store, to_iso, utcnow
+from .store import AlertRecord, LocationRecord, Store, to_iso
 
 
 def _app_location_payload(rec: LocationRecord) -> dict:
@@ -41,19 +39,10 @@ def _create_alert(
     message: str,
     location_point_id: Optional[int],
 ) -> AlertRecord:
-    alert = AlertRecord(
-        id=gen_id("alt"),
-        user_id=user_id,
-        pet_id=pet_id,
-        device_id=device_id,
-        type=type_,
-        severity=severity,
-        status="open",
-        message=message,
-        location_point_id=location_point_id,
-        created_at=utcnow(),
+    alert = store.create_alert(
+        user_id=user_id, pet_id=pet_id, device_id=device_id, type_=type_,
+        severity=severity, message=message, location_point_id=location_point_id,
     )
-    store.add_alert(alert)
     broker.publish(user_id, "alert.created", {
         "alert_id": alert.id,
         "pet_id": pet_id,
@@ -73,15 +62,14 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
     for gf in store.geofences_for_pet(rec.pet_id):
         if not gf.enabled:
             continue
-        state = store.geofence_state[gf.id]
         dist = haversine_m(rec.lat, rec.lng, gf.center_lat, gf.center_lng)
         outside = dist > gf.radius_m
+        consecutive = gf.consecutive_outside
+        open_alert_id = gf.open_alert_id
+
         if outside and accurate:
-            state.consecutive_outside += 1
-            if (
-                state.consecutive_outside >= settings.geofence_exit_consecutive
-                and state.open_alert_id is None
-            ):
+            consecutive += 1
+            if consecutive >= settings.geofence_exit_consecutive and open_alert_id is None:
                 alert = _create_alert(
                     store, broker,
                     user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
@@ -89,14 +77,13 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
                     message=f"{pet_name} 可能离开了安全区域「{gf.name}」",
                     location_point_id=rec.id,
                 )
-                state.open_alert_id = alert.id
+                open_alert_id = alert.id
+            store.update_geofence_state(gf.id, consecutive, open_alert_id)
         elif not outside:
-            state.consecutive_outside = 0
-            if state.open_alert_id:
-                a = store.find_alert(state.open_alert_id)
-                if a and a.status == "open":
-                    a.status = "resolved"
-                state.open_alert_id = None
+            if open_alert_id:
+                store.set_alert_status(open_alert_id, "resolved")
+            store.update_geofence_state(gf.id, 0, None)
+        # outside but inaccurate: leave debounce state unchanged (avoid false alarms)
 
 
 def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: str, pet_name: str) -> None:
@@ -113,7 +100,7 @@ def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: s
             location_point_id=rec.id,
         )
     elif rec.battery_pct > threshold and existing is not None:
-        existing.status = "resolved"
+        store.set_alert_status(existing.id, "resolved")
 
 
 def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoint) -> str:
@@ -122,27 +109,11 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
         return "duplicate"
 
     pet_id = store.pet_for_device(device_id)
-    rec = LocationRecord(
-        id=store.next_location_id(),
-        device_id=device_id,
-        pet_id=pet_id,
-        seq=p.seq,
-        ts=p.ts,
-        dt=datetime.fromtimestamp(p.ts, tz=timezone.utc),
-        lat=p.lat,
-        lng=p.lng,
-        accuracy_m=p.accuracy_m,
-        source=p.source.value,
-        speed_mps=p.speed_mps,
-        heading=p.heading,
-        battery_pct=p.battery_pct,
-        motion_state=p.motion_state.value if p.motion_state else None,
-    )
-    store.add_location(rec)
+    rec = store.add_location(device_id, pet_id, p)
     st = store.touch_device(device_id, battery_pct=p.battery_pct)
 
     if pet_id:
-        pet = store.pets[pet_id]
+        pet = store.get_pet(pet_id)
         payload = {"pet_id": pet_id, "device_id": device_id}
         payload.update(_app_location_payload(rec))
         broker.publish(pet.owner_id, "location.updated", payload)
@@ -163,7 +134,7 @@ def process_heartbeat(store: Store, broker: Broker, device_id: str, mode: str, b
     st = store.touch_device(device_id, mode=mode, battery_pct=battery_pct)
     pet_id = store.pet_for_device(device_id)
     if pet_id:
-        pet = store.pets[pet_id]
+        pet = store.get_pet(pet_id)
         broker.publish(pet.owner_id, "device.status_updated", {
             "device_id": device_id,
             "pet_id": pet_id,

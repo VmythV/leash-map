@@ -14,7 +14,7 @@ router = APIRouter(prefix="/v1", tags=["pets"])
 
 
 def _to_pet(store, rec) -> Pet:
-    latest = store.latest_by_pet.get(rec.id)
+    latest = store.latest_for_pet(rec.id)
     return Pet(
         id=rec.id,
         name=rec.name,
@@ -38,7 +38,7 @@ def create_pet(body: PetCreate, user: User = Depends(app_auth), store=Depends(ge
 
 @router.post("/devices/bind", response_model=DeviceBinding)
 def bind_device(body: BindRequest, user: User = Depends(app_auth), store=Depends(get_store)):
-    pet = store.pets.get(body.pet_id)
+    pet = store.get_pet(body.pet_id)
     if pet is None:
         raise APIError("not_found", "Pet not found")
     if pet.owner_id != user.id:

@@ -46,6 +46,5 @@ def ack_alert(alert_id: str, user: User = Depends(app_auth), store=Depends(get_s
     if a is None or a.user_id != user.id:
         raise APIError("not_found", "Alert not found")
     if a.status == "open":
-        a.status = "acknowledged"
-        a.acknowledged_at = utcnow()
+        a = store.set_alert_status(alert_id, "acknowledged", acknowledged_at=utcnow())
     return _to_alert(a)

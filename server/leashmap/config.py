@@ -15,9 +15,10 @@ class Settings(BaseSettings):
 
     app_env: str = "local"
 
-    # Placeholder for the future PostgreSQL/PostGIS backend. The MVP uses an
-    # in-memory store, so this is currently unused.
-    database_url: Optional[str] = None
+    # MVP persistence is SQLite via SQLAlchemy. Swap this URL for a PostgreSQL
+    # DSN later — the ORM layer stays the same (geo math is done in Python, so
+    # PostGIS is not required yet).
+    database_url: str = "sqlite:///leashmap.db"
 
     # If set, device uploads must present this exact bearer token. If unset,
     # any non-empty device token is accepted (local development only).

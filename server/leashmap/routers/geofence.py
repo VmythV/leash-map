@@ -6,7 +6,6 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from ..deps import app_auth, get_store
-from ..ids import gen_id
 from ..schemas import Geofence, GeofenceCreate, User
 from ..store import GeofenceRecord
 from ..web import owned_pet
@@ -41,13 +40,12 @@ def create_geofence(
     store=Depends(get_store),
 ):
     owned_pet(store, user, pet_id)
-    rec = store.create_geofence(GeofenceRecord(
-        id=gen_id("geo"),
+    rec = store.create_geofence(
         pet_id=pet_id,
         name=body.name,
         center_lat=body.center_lat,
         center_lng=body.center_lng,
         radius_m=body.radius_m,
         enabled=body.enabled,
-    ))
+    )
     return _to_geofence(rec)

@@ -17,8 +17,8 @@ router = APIRouter(prefix="/v1/pets", tags=["location"])
 @router.get("/{pet_id}/location/latest", response_model=LatestLocation)
 def latest_location(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
     pet = owned_pet(store, user, pet_id)
-    rec = store.latest_by_pet.get(pet_id)
-    st = store.device_status.get(pet.device_id) if pet.device_id else None
+    rec = store.latest_for_pet(pet_id)
+    st = store.get_device_status(pet.device_id) if pet.device_id else None
     return LatestLocation(
         pet_id=pet_id,
         location=to_app_location(rec) if rec else None,

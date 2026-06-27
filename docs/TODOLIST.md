@@ -82,41 +82,43 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 
 ## 5. Phase 3: Device Simulator
 
-- [ ] Create `simulator/` project.
-- [ ] Implement fixed-route location generation.
-- [ ] Implement random walk route generation.
-- [ ] Implement battery drain simulation.
-- [ ] Implement online, offline, reconnect states.
-- [ ] Implement low-accuracy GNSS point simulation.
-- [ ] Implement location drift simulation.
-- [ ] Implement geofence exit simulation.
-- [ ] Implement high-frequency lost-pet mode simulation.
-- [ ] Implement offline cache and batch upload simulation.
-- [ ] Support CLI configuration for:
-  - [ ] device ID
-  - [ ] upload interval
-  - [ ] route file
-  - [ ] API endpoint
-  - [ ] auth token
-- [ ] Add simulator test fixtures.
-- [ ] Add simulator README.
+> Done (Python 3.12 + uv + httpx). Verified end-to-end via scripts/demo.sh.
+
+- [x] Create `simulator/` project.
+- [x] Implement fixed-route location generation. (routes.build_points + fixtures)
+- [x] Implement random walk route generation. (routes.random_walk)
+- [x] Implement battery drain simulation. (runner)
+- [x] Implement online, offline, reconnect states. (offline mode = cache + batch flush)
+- [x] Implement low-accuracy GNSS point simulation. (drift mode)
+- [x] Implement location drift simulation. (routes.apply_drift)
+- [x] Implement geofence exit simulation. (exit_zone mode = routes.walk_away)
+- [x] Implement high-frequency lost-pet mode simulation. (lost mode)
+- [x] Implement offline cache and batch upload simulation. (offline mode)
+- [x] Support CLI configuration for:
+  - [x] device ID
+  - [x] upload interval
+  - [x] route file
+  - [x] API endpoint
+  - [x] auth token
+- [x] Add simulator test fixtures. (fixtures/park-route.json)
+- [x] Add simulator README.
 
 ## 6. Phase 4: Cloud Foundation
 
-> Skeleton done with an in-memory store (FastAPI). DB-backed items below stay
-> open until PostgreSQL/PostGIS is wired in. End-to-end loop verified by
-> `server/tests/test_smoke.py`.
+> Done over SQLite (SQLAlchemy 2.0). Tables auto-created via create_all; a
+> migration tool (Alembic) and a PostgreSQL swap are the remaining DB items.
+> End-to-end loop verified by `server/tests/test_smoke.py` and scripts/demo.sh.
 
 - [x] Create `server/` project.
-- [ ] Add database migration system.
-- [~] Create users table. (in-memory model; real table pending)
-- [~] Create pets table. (in-memory)
-- [~] Create devices table. (in-memory)
-- [~] Create device bindings table. (in-memory)
-- [~] Create location points table. (in-memory)
-- [~] Create geofences table. (in-memory)
-- [~] Create alerts table. (in-memory)
-- [ ] Create device events table.
+- [ ] Add database migration system. (Alembic; currently SQLAlchemy create_all)
+- [x] Create users table. (SQLite; + sessions)
+- [x] Create pets table.
+- [x] Create devices table. (device_status)
+- [x] Create device bindings table.
+- [x] Create location points table.
+- [x] Create geofences table.
+- [x] Create alerts table.
+- [x] Create device events table.
 - [x] Implement device authentication.
 - [x] Implement location ingestion endpoint. (+ batch)
 - [x] Implement heartbeat endpoint.
@@ -127,7 +129,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 - [~] Implement circular geofence CRUD. (create + list; update/disable pending)
 - [x] Implement alert list API.
 - [x] Implement basic API tests. (server/tests/test_smoke.py)
-- [ ] Implement seed script for local demo data.
+- [x] Implement seed script for local demo data. (scripts/demo.sh seeds via API)
 
 ## 7. Phase 5: Location and Geofence Processing
 
