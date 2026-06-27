@@ -27,8 +27,8 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
   - [x] `scripts/`
   - [x] `tests/`
   - [x] `docs/`
-- [x] Choose MVP technology stack for cloud service. (Python + FastAPI + Pydantic v2; in-memory store, PostgreSQL/PostGIS later)
-- [ ] Choose MVP technology stack for user App.
+- [x] Choose MVP technology stack for cloud service. (Python 3.12 + FastAPI + SQLAlchemy/SQLite; PostgreSQL later)
+- [x] Choose MVP technology stack for user App. (Flutter + provider + http; Web first)
 - [ ] Choose MVP firmware toolchain.
 - [x] Define environment naming: (docs/api/README.md)
   - [x] local
@@ -133,60 +133,63 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 
 ## 7. Phase 5: Location and Geofence Processing
 
-- [ ] Validate latitude and longitude range.
+- [x] Validate latitude and longitude range. (Pydantic schema bounds)
 - [ ] Validate timestamp drift.
 - [ ] Reject impossible speed jumps.
-- [ ] Store location source:
-  - [ ] GNSS
-  - [ ] Cell
-  - [ ] Wi-Fi
-  - [ ] BLE
-  - [ ] Simulator
-- [ ] Store accuracy radius.
-- [ ] Store battery percentage.
-- [ ] Store motion state.
-- [ ] Implement latest location cache.
-- [ ] Implement trail point query by time range.
-- [ ] Implement simple trail downsampling.
-- [ ] Implement circular geofence containment check.
-- [ ] Implement geofence exit debounce.
-- [ ] Implement geofence re-entry detection.
-- [ ] Implement low-battery alert.
-- [ ] Implement offline alert.
-- [ ] Implement alert deduplication.
+- [x] Store location source:
+  - [x] GNSS
+  - [x] Cell
+  - [x] Wi-Fi
+  - [x] BLE
+  - [x] Simulator
+- [x] Store accuracy radius.
+- [x] Store battery percentage.
+- [x] Store motion state.
+- [x] Implement latest location cache. (latest_for_pet query)
+- [x] Implement trail point query by time range.
+- [ ] Implement simple trail downsampling. (param accepted; not yet applied)
+- [x] Implement circular geofence containment check. (haversine)
+- [x] Implement geofence exit debounce.
+- [x] Implement geofence re-entry detection. (resolves on re-entry)
+- [x] Implement low-battery alert.
+- [x] Implement offline alert. (background scan of last_seen)
+- [x] Implement alert deduplication. (one open alert per pet+type)
 
 ## 8. Phase 6: Realtime and Notification
 
-- [ ] Choose WebSocket or SSE for App realtime updates.
-- [ ] Implement latest-location realtime push.
-- [ ] Implement alert realtime push.
-- [ ] Implement reconnect handling.
+- [x] Choose WebSocket or SSE for App realtime updates. (SSE)
+- [x] Implement latest-location realtime push. (location.updated)
+- [x] Implement alert realtime push. (alert.created)
+- [x] Implement reconnect handling. (App falls back; SSE Last-Event-ID documented)
 - [ ] Implement basic notification service abstraction.
 - [ ] Add placeholder push provider for local development.
 - [ ] Add alert delivery status.
-- [ ] Add alert acknowledgement API.
+- [x] Implement alert acknowledgement API. (/v1/alerts/{id}/ack)
 
 ## 9. Phase 7: User App MVP
 
-- [ ] Create `app/` project.
-- [ ] Implement startup and environment configuration.
-- [ ] Implement login or temporary demo session.
-- [ ] Implement pet creation screen.
-- [ ] Implement device binding screen.
-- [ ] Implement map home screen.
-- [ ] Display pet latest location.
-- [ ] Display device online status.
-- [ ] Display battery percentage.
-- [ ] Display location accuracy.
-- [ ] Display location source.
-- [ ] Implement trail playback screen.
-- [ ] Implement safe-zone settings screen.
-- [ ] Implement alert list screen.
+> Done (Flutter Web). flutter analyze clean, build web + widget test pass.
+> Self-demos via /demo/run. Connects to live API + SSE.
+
+- [x] Create `app/` project.
+- [x] Implement startup and environment configuration. (config.dart, --dart-define)
+- [x] Implement login or temporary demo session.
+- [x] Implement pet creation screen. (auto-create on bootstrap)
+- [x] Implement device binding screen. (auto-bind on bootstrap)
+- [x] Implement map home screen. (MiniMap)
+- [x] Display pet latest location.
+- [x] Display device online status.
+- [x] Display battery percentage.
+- [x] Display location accuracy.
+- [x] Display location source.
+- [x] Implement trail playback screen.
+- [x] Implement safe-zone settings screen.
+- [x] Implement alert list screen.
 - [ ] Implement lost-pet mode entry.
-- [ ] Implement empty states for no device and no location.
-- [ ] Implement API client.
-- [ ] Implement realtime client.
-- [ ] Connect App to simulator-backed cloud data.
+- [x] Implement empty states for no device and no location.
+- [x] Implement API client.
+- [x] Implement realtime client. (SSE)
+- [x] Connect App to simulator-backed cloud data.
 
 ## 10. Phase 8: Firmware Skeleton
 
