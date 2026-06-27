@@ -5,13 +5,14 @@ and docs/api/realtime-events.md.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import Optional
 
 from .broker import Broker
 from .config import settings
 from .geo import haversine_m
 from .schemas import LocationPoint
-from .store import AlertRecord, LocationRecord, Store, to_iso
+from .store import AlertRecord, LocationRecord, Store, to_iso, utcnow
 
 
 def _app_location_payload(rec: LocationRecord) -> dict:
@@ -128,6 +129,43 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
         _eval_battery(store, broker, rec, pet.owner_id, pet.name)
 
     return "accepted"
+
+
+def scan_offline(store: Store, broker: Broker, now: Optional[datetime] = None) -> int:
+    """Raise/resolve offline alerts by comparing last_seen against the threshold.
+
+    Returns the number of new offline alerts created. Pure enough to unit-test
+    by seeding device_status rows with an old last_seen.
+    """
+    now = now or utcnow()
+    threshold = timedelta(seconds=settings.offline_threshold_seconds)
+    created = 0
+    for st in store.all_device_status():
+        pet_id = store.pet_for_device(st.device_id)
+        if not pet_id:
+            continue
+        pet = store.get_pet(pet_id)
+        if pet is None:
+            continue
+        offline = st.last_seen is None or (now - st.last_seen) > threshold
+        existing = store.open_alert(pet_id, "offline")
+        if offline and existing is None:
+            _create_alert(
+                store, broker,
+                user_id=pet.owner_id, pet_id=pet_id, device_id=st.device_id,
+                type_="offline", severity="warning",
+                message=f"{pet.name} 的设备已离线，最后在线时间 "
+                        f"{to_iso(st.last_seen) if st.last_seen else '未知'}",
+                location_point_id=None,
+            )
+            created += 1
+        elif not offline and existing is not None:
+            store.set_alert_status(existing.id, "resolved")
+            broker.publish(pet.owner_id, "device.status_updated", {
+                "device_id": st.device_id, "pet_id": pet_id, "online": True,
+                "mode": st.mode, "last_seen_at": to_iso(st.last_seen) if st.last_seen else None,
+            })
+    return created
 
 
 def process_heartbeat(store: Store, broker: Broker, device_id: str, mode: str, battery_pct: int) -> None:

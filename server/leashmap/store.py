@@ -268,6 +268,10 @@ class Store:
             r = s.get(DeviceStatusRow, device_id)
             return _status(r) if r else None
 
+    def all_device_status(self) -> List[DeviceStatusRecord]:
+        with db.SessionLocal() as s:
+            return [_status(r) for r in s.scalars(select(DeviceStatusRow)).all()]
+
     def add_device_event(self, device_id: str, ts: int, event: str, data: Optional[dict]) -> None:
         with db.SessionLocal() as s:
             s.add(DeviceEventRow(device_id=device_id, ts=ts, event=event, data=data))

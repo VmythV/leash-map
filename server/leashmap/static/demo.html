@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeashMap · Live Demo</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: #0f1115; color: #e7e9ee; }
+  header { padding: 14px 18px; border-bottom: 1px solid #232634; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  button { background: #3b82f6; color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #1b2030; color: #aeb6c8; }
+  main { display: grid; grid-template-columns: 520px 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 860px){ main { grid-template-columns: 1fr; } }
+  canvas { background: #131722; border: 1px solid #232634; border-radius: 12px; width: 100%; }
+  .panel { background: #131722; border: 1px solid #232634; border-radius: 12px; padding: 12px 14px; }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #8b94a7; margin: 0 0 10px; }
+  .alert { padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; background: #2a1f1f; border: 1px solid #5a2d2d; }
+  .alert.exit_zone { background: #2a1f1f; border-color: #7a3b3b; }
+  .alert.low_battery { background: #2a261a; border-color: #7a6a2d; }
+  .alert.offline { background: #21262f; border-color: #3d4757; }
+  .kv { display: flex; gap: 8px; font-size: 13px; margin: 4px 0; color: #c2c8d6; }
+  .kv b { color: #e7e9ee; font-weight: 600; min-width: 84px; display: inline-block; }
+  .muted { color: #6b7488; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐾 LeashMap · Live Demo</h1>
+  <span id="conn" class="pill">未连接</span>
+  <button id="start">① 初始化并订阅</button>
+  <button id="run" disabled>② 让宠物走动</button>
+  <span class="muted">数据经 SSE 实时推送（设备模拟在云端进程内运行）</span>
+</header>
+<main>
+  <canvas id="map" width="500" height="500"></canvas>
+  <div>
+    <div class="panel" style="margin-bottom:14px">
+      <h2>状态</h2>
+      <div class="kv"><b>宠物</b><span id="pet">—</span></div>
+      <div class="kv"><b>设备</b><span id="dev">—</span></div>
+      <div class="kv"><b>电量</b><span id="batt">—</span></div>
+      <div class="kv"><b>最新位置</b><span id="loc">—</span></div>
+      <div class="kv"><b>轨迹点</b><span id="count">0</span></div>
+    </div>
+    <div class="panel">
+      <h2>告警</h2>
+      <div id="alerts"><span class="muted">暂无告警</span></div>
+    </div>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const cv = $('map'), ctx = cv.getContext('2d');
+let state = { token:null, petId:null, deviceId:null, gf:null, trail:[], mpp: 600/500 };
+
+function project(lat, lng) {
+  const [clat, clng] = [state.gf.center_lat, state.gf.center_lng];
+  const dn = (lat - clat) * 111320;
+  const de = (lng - clng) * 111320 * Math.cos(clat * Math.PI/180);
+  return [ cv.width/2 + de/state.mpp, cv.height/2 - dn/state.mpp ];
+}
+
+function draw() {
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // grid
+  ctx.strokeStyle = '#1c2230'; ctx.lineWidth = 1;
+  for (let g=0; g<=cv.width; g+=50){ ctx.beginPath(); ctx.moveTo(g,0); ctx.lineTo(g,cv.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,g); ctx.lineTo(cv.width,g); ctx.stroke(); }
+  if (!state.gf) return;
+  // geofence
+  const [gx,gy] = project(state.gf.center_lat, state.gf.center_lng);
+  const r = state.gf.radius_m / state.mpp;
+  ctx.beginPath(); ctx.arc(gx,gy,r,0,Math.PI*2);
+  ctx.fillStyle = 'rgba(59,130,246,.10)'; ctx.fill();
+  ctx.strokeStyle = '#3b82f6'; ctx.setLineDash([6,4]); ctx.lineWidth=1.5; ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#3b82f6'; ctx.font='12px system-ui'; ctx.fillText('安全区「家」', gx-30, gy-r-6);
+  // trail
+  if (state.trail.length) {
+    ctx.beginPath();
+    state.trail.forEach((p,i)=>{ const [x,y]=project(p.lat,p.lng); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.strokeStyle='#22c55e'; ctx.lineWidth=2; ctx.stroke();
+    const last = state.trail[state.trail.length-1];
+    const [lx,ly]=project(last.lat,last.lng);
+    const outside = Math.hypot(lx-gx, ly-gy) > r;
+    ctx.beginPath(); ctx.arc(lx,ly,7,0,Math.PI*2);
+    ctx.fillStyle = outside ? '#ef4444' : '#22c55e'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  }
+}
+
+async function start() {
+  $('start').disabled = true;
+  const r = await fetch('/demo/seed', {method:'POST'}).then(r=>r.json());
+  state.token=r.token; state.petId=r.pet_id; state.deviceId=r.device_id; state.gf=r.geofence; state.trail=[];
+  $('pet').textContent = r.pet_id; $('dev').textContent = r.device_id;
+  draw();
+  const es = new EventSource(`/v1/realtime/stream?access_token=${r.token}&pet_id=${r.pet_id}`);
+  es.onopen = ()=> $('conn').textContent='已连接 (SSE)';
+  es.onerror = ()=> $('conn').textContent='重连中…';
+  es.addEventListener('location.updated', e=>{
+    const d = JSON.parse(e.data);
+    state.trail.push({lat:d.lat, lng:d.lng});
+    $('loc').textContent = `${d.lat.toFixed(5)}, ${d.lng.toFixed(5)} (±${d.accuracy_m}m)`;
+    $('count').textContent = state.trail.length;
+    draw();
+  });
+  es.addEventListener('device.battery_updated', e=>{
+    const d = JSON.parse(e.data); $('batt').textContent = d.battery_pct + '%';
+  });
+  es.addEventListener('alert.created', e=>{
+    const a = JSON.parse(e.data);
+    const el = document.getElementById('alerts');
+    if (el.querySelector('.muted')) el.innerHTML='';
+    const div = document.createElement('div');
+    div.className = 'alert ' + a.type;
+    div.textContent = `[${a.type}] ${a.message}`;
+    el.prepend(div);
+  });
+  $('run').disabled = false;
+}
+
+async function run() {
+  $('run').disabled = true;
+  await fetch('/demo/run', {method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({device_id: state.deviceId, mode:'exit_zone', count:14, interval:0.7})});
+  setTimeout(()=> $('run').disabled=false, 12000);
+}
+
+$('start').onclick = start;
+$('run').onclick = run;
+draw();
+</script>
+</body>
+</html>

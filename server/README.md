@@ -20,9 +20,26 @@ uv run uvicorn leashmap.main:app --reload --port 8080
 
 curl localhost:8080/health
 open http://localhost:8080/docs           # Swagger UI
+open http://localhost:8080/demo           # 实时地图 demo（local 环境）：①初始化 ②让宠物走动
 
 uv run pytest -q                          # 测试（内存 SQLite，见 tests/conftest.py）
 ```
+
+### 数据库迁移（Alembic）
+
+应用启动用 `create_all` 直接建表，开发即开即用。需要演进 schema 时用 Alembic：
+
+```bash
+uv run alembic upgrade head                       # 应用迁移
+uv run alembic revision --autogenerate -m "msg"   # 改动模型后生成迁移
+```
+
+### 实时地图 demo
+
+`GET /demo`（仅 `local`）是一个零外部依赖的自包含网页：Canvas 画安全区 + 轨迹，
+经 SSE 实时更新。点「让宠物走动」由云端进程内模拟一段走出安全区的路径，
+触发 `location.updated` 与 `exit_zone` 告警。SSE 用 `?access_token=` 查询参数鉴权
+（EventSource 无法设置请求头）。
 
 配置走环境变量（前缀 `LEASHMAP_`），见 [.env.example](.env.example)。
 
@@ -51,10 +68,16 @@ leashmap/
     location.py  /v1/pets/{id}/location/latest, /trail
     geofence.py  /v1/pets/{id}/geofences
     alerts.py    /v1/alerts, /v1/alerts/{id}/ack
-    realtime.py  /v1/realtime/stream   SSE
+    realtime.py  /v1/realtime/stream   SSE（header 或 ?access_token=）
+    demo.py      /demo, /demo/seed, /demo/run（仅 local）
+  static/
+    demo.html    自包含实时地图页
+alembic/         数据库迁移（env.py 接 Base.metadata + settings URL）
 tests/
   conftest.py    测试用内存 SQLite
   test_smoke.py  端到端闭环：绑定→接入→离区告警→轨迹→低电→ack
+  test_offline.py 离线告警扫描
+  test_demo.py   demo seed + SSE token-query 鉴权
 ```
 
 ## 数据表（SQLite）
@@ -82,11 +105,11 @@ tests/
 ## MVP 现状与后续
 
 已实现：设备鉴权、单点/批量接入、心跳、事件、最新位置、轨迹、圆形围栏 CRUD、
-离区防误报告警、低电告警、SSE 实时推送、demo 会话、SQLite 持久化。
+离区防误报告警、低电告警、**离线告警（后台扫描）**、SSE 实时推送、
+**实时地图 demo**、demo 会话、SQLite 持久化、**Alembic 迁移**。
 
 后续：
-- [ ] 迁移工具（Alembic）替代 `create_all`
+- [ ] 启动改用 `alembic upgrade head`（当前仍 `create_all`）
 - [ ] 换 PostgreSQL（仅改 `LEASHMAP_DATABASE_URL`）
-- [ ] 离线告警（后台定时扫描 `device_status.last_seen`）
 - [ ] 下行命令实际入队（寻宠模式 set_mode）
 - [ ] 持久化的设备 token / 证书

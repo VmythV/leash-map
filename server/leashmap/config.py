@@ -29,5 +29,10 @@ class Settings(BaseSettings):
     geofence_exit_consecutive: int = 2
     low_battery_threshold: int = 15
 
+    # Offline detection. A bound device with no heartbeat/location within the
+    # threshold raises an offline alert. The background scan runs on an interval.
+    offline_threshold_seconds: int = 900
+    offline_scan_interval_seconds: int = 30
+
 
 settings = Settings()
