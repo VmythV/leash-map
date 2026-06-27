@@ -120,6 +120,14 @@ class AppState extends ChangeNotifier {
         createdAt: (d['created_at'] ?? '') as String,
       );
 
+  bool lostMode = false;
+
+  Future<void> toggleLostMode() async {
+    lostMode = !lostMode;
+    notifyListeners();
+    await api.setLostMode(pet!.id, lostMode);
+  }
+
   Future<void> runDemo() async {
     if (deviceId != null) {
       liveTrail.clear();

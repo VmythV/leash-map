@@ -1,14 +1,17 @@
 """Pets and device binding."""
 from __future__ import annotations
 
+import time
 from typing import List
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from ..deps import app_auth, get_store
 from ..errors import APIError
 from ..schemas import BindRequest, DeviceBinding, Pet, PetCreate, User
 from ..store import to_iso
+from ..web import owned_pet
 
 router = APIRouter(prefix="/v1", tags=["pets"])
 
@@ -52,3 +55,24 @@ def bind_device(body: BindRequest, user: User = Depends(app_auth), store=Depends
         pet_id=body.pet_id,
         bound_at=to_iso(bound_at),
     )
+
+
+class LostModeRequest(BaseModel):
+    on: bool
+
+
+@router.post("/pets/{pet_id}/lost-mode")
+def set_lost_mode(
+    pet_id: str,
+    body: LostModeRequest,
+    user: User = Depends(app_auth),
+    store=Depends(get_store),
+):
+    """Enqueue a set_mode command toward the pet's device (lost-pet mode)."""
+    pet = owned_pet(store, user, pet_id)
+    if not pet.device_id:
+        raise APIError("conflict", "No device bound to this pet")
+    expires_at = int(time.time()) + 300
+    mode = "lost" if body.on else "tracking"
+    cmd = store.enqueue_command(pet.device_id, "set_mode", {"mode": mode}, expires_at)
+    return {"ok": True, "command": cmd}

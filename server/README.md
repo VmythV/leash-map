@@ -110,9 +110,11 @@ tests/
 **通知通道抽象 + 投递状态**、SSE 实时推送、实时地图 demo、demo 会话、
 SQLite 持久化、Alembic 迁移。
 
+下行命令：`POST /v1/pets/{id}/lost-mode` 入队 `set_mode` 命令 → 上行响应 `commands`
+搭车下发 → 设备 `command_ack` 事件标记完成（含过期）。
+
 后续：
 - [ ] 启动改用 `alembic upgrade head`（当前仍 `create_all`）
 - [ ] 换 PostgreSQL（仅改 `LEASHMAP_DATABASE_URL`）
 - [ ] 真实推送通道（APNs/FCM/短信）替换 ConsoleProvider
-- [ ] 下行命令实际入队（寻宠模式 set_mode）
 - [ ] 持久化的设备 token / 证书

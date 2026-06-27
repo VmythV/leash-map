@@ -16,6 +16,7 @@ from . import db
 from .db import (
     AlertRow,
     BindingRow,
+    CommandRow,
     DeviceEventRow,
     DeviceStatusRow,
     GeofenceRow,
@@ -367,6 +368,39 @@ class Store:
                 select(NotificationDeliveryRow).where(NotificationDeliveryRow.alert_id == alert_id)
             ).all()
             return [{"channel": r.channel, "status": r.status, "created_at": to_iso(r.created_at)} for r in rows]
+
+    # ---- downlink commands ----
+    def enqueue_command(self, device_id: str, type_: str, params: Optional[dict], expires_at: int) -> dict:
+        cid = gen_id("cmd", 8)
+        with db.SessionLocal() as s:
+            s.add(CommandRow(
+                command_id=cid, device_id=device_id, type=type_, params=params,
+                expires_at=expires_at, status="pending", created_at=utcnow(),
+            ))
+            s.commit()
+        return {"command_id": cid, "type": type_, "params": params, "expires_at": expires_at}
+
+    def pending_commands(self, device_id: str, now_epoch: int) -> List[dict]:
+        with db.SessionLocal() as s:
+            rows = s.scalars(select(CommandRow).where(
+                CommandRow.device_id == device_id,
+                CommandRow.status == "pending",
+                CommandRow.expires_at > now_epoch,
+            )).all()
+            return [
+                {"command_id": r.command_id, "type": r.type, "params": r.params, "expires_at": r.expires_at}
+                for r in rows
+            ]
+
+    def ack_command(self, command_id: str, status: str = "applied") -> bool:
+        with db.SessionLocal() as s:
+            row = s.get(CommandRow, command_id)
+            if row is None or row.status == "acked":
+                return False
+            row.status = "acked"
+            row.acked_at = utcnow()
+            s.commit()
+            return True
 
 
 store = Store()

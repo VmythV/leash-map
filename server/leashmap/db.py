@@ -122,6 +122,18 @@ class NotificationDeliveryRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class CommandRow(Base):
+    __tablename__ = "commands"
+    command_id: Mapped[str] = mapped_column(String, primary_key=True)
+    device_id: Mapped[str] = mapped_column(String, index=True)
+    type: Mapped[str] = mapped_column(String)
+    params: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    expires_at: Mapped[int] = mapped_column()  # unix epoch seconds
+    status: Mapped[str] = mapped_column(String, index=True)  # pending | acked
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    acked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+
 def _make_engine(url: str):
     is_sqlite = url.startswith("sqlite")
     kwargs: dict = {}

@@ -117,6 +117,13 @@ class ApiClient {
     return Alert.fromJson(_json(r) as Map<String, dynamic>);
   }
 
+  /// Toggle lost-pet mode — enqueues a set_mode command toward the device.
+  Future<void> setLostMode(String petId, bool on) async {
+    final r = await http.post(_u('/v1/pets/$petId/lost-mode'),
+        headers: _headers, body: jsonEncode({'on': on}));
+    _json(r);
+  }
+
   /// Local-only demo helper: drive in-process movement for a device.
   Future<void> demoRun(String deviceId, {String mode = 'exit_zone'}) async {
     final r = await http.post(_u('/demo/run'),

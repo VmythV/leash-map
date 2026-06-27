@@ -9,6 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "lm_command.h"
+
 #define LM_PROTOCOL_VERSION 1
 
 typedef struct {
@@ -41,5 +43,14 @@ int lm_protocol_location(char *buf, size_t n, const lm_location_t *p);
 int lm_protocol_heartbeat(char *buf, size_t n, const lm_heartbeat_t *p);
 int lm_protocol_event(char *buf, size_t n, const char *device_id, uint64_t ts,
                       const char *event, const char *data_json /* or NULL */);
+
+/* Serialize a command_ack event (a device event with the ack payload). */
+int lm_protocol_command_ack(char *buf, size_t n, const char *device_id, uint64_t ts,
+                            const char *command_id, const char *status);
+
+/* Parse one command object (an element of the ingest response "commands"
+ * array) into *cmd. Returns true if a command_id and type were found. Minimal
+ * field scanner — sufficient for the server's compact JSON. */
+bool lm_protocol_parse_command(const char *json, lm_command_t *cmd);
 
 #endif /* LM_PROTOCOL_H */

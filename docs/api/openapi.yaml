@@ -192,6 +192,33 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /v1/pets/{petId}/lost-mode:
+    post:
+      tags: [pets]
+      summary: Toggle lost-pet mode (enqueues a set_mode downlink command)
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [on]
+              properties:
+                on: { type: boolean }
+      responses:
+        "200":
+          description: command enqueued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  command: { $ref: "#/components/schemas/Command" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
   # ---------------- App: location ----------------
   /v1/pets/{petId}/location/latest:
     get:

@@ -185,7 +185,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 - [x] Implement trail playback screen.
 - [x] Implement safe-zone settings screen.
 - [x] Implement alert list screen.
-- [ ] Implement lost-pet mode entry.
+- [x] Implement lost-pet mode entry. (home toggle -> /v1/pets/{id}/lost-mode -> set_mode command)
 - [x] Implement empty states for no device and no location.
 - [x] Implement API client.
 - [x] Implement realtime client. (SSE)
@@ -209,16 +209,17 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
   - [x] low battery
   - [x] OTA
   - [x] fault recovery
-- [ ] Implement modem abstraction.
-- [ ] Implement GNSS abstraction.
-- [ ] Implement IMU abstraction.
-- [ ] Implement battery abstraction.
+- [~] Implement modem abstraction. (HAL vtable interface; MCU impl pending)
+- [~] Implement GNSS abstraction. (HAL vtable interface; MCU impl pending)
+- [~] Implement IMU abstraction. (HAL vtable interface; MCU impl pending)
+- [~] Implement battery abstraction. (HAL vtable interface; MCU impl pending)
 - [x] Implement local storage queue abstraction. (lm_cache ring buffer)
-- [x] Implement data payload serialization. (lm_protocol)
-- [ ] Implement upload retry strategy.
-- [ ] Implement serial logging.
-- [ ] Implement configuration storage. (lm_config struct; persistence TBD)
+- [x] Implement data payload serialization. (lm_protocol + command parse/ack)
+- [x] Implement upload retry strategy. (offline cache + flush-on-reconnect in lm_app)
+- [~] Implement serial logging. (log_event hook in HAL; MCU sink pending)
+- [~] Implement configuration storage. (lm_config struct; persistence pending)
 - [x] Add unit-testable pure logic for state transitions.
+- [x] Add device app orchestrator + downlink command apply/ack. (lm_app, mock-tested)
 
 ## 11. Phase 9: Development Board Integration
 

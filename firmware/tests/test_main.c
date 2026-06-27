@@ -23,6 +23,15 @@ void test_protocol_truncation(void);
 void test_cache_push_drain(void);
 void test_cache_overflow_drops_oldest(void);
 void test_cache_partial_drain(void);
+/* command parsing */
+void test_parse_set_mode(void);
+void test_parse_set_interval(void);
+void test_parse_missing_returns_false(void);
+/* app orchestrator */
+void test_app_tracking_publishes(void);
+void test_app_no_fix_skips(void);
+void test_app_offline_caches_then_flushes(void);
+void test_app_applies_command_and_acks(void);
 
 int main(void) {
     LM_RUN(test_state_boot_flow);
@@ -42,6 +51,15 @@ int main(void) {
     LM_RUN(test_cache_push_drain);
     LM_RUN(test_cache_overflow_drops_oldest);
     LM_RUN(test_cache_partial_drain);
+
+    LM_RUN(test_parse_set_mode);
+    LM_RUN(test_parse_set_interval);
+    LM_RUN(test_parse_missing_returns_false);
+
+    LM_RUN(test_app_tracking_publishes);
+    LM_RUN(test_app_no_fix_skips);
+    LM_RUN(test_app_offline_caches_then_flushes);
+    LM_RUN(test_app_applies_command_and_acks);
 
     printf("\n%d checks, %d failed\n", lm_total, lm_fail);
     return lm_fail == 0 ? 0 : 1;

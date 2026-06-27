@@ -101,6 +101,12 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ]),
+          const SizedBox(height: 10),
+          FilledButton.tonalIcon(
+            onPressed: () => _toggleLost(s),
+            icon: Icon(s.lostMode ? Icons.gps_fixed : Icons.travel_explore),
+            label: Text(s.lostMode ? '寻宠模式：开（高频上报）' : '寻宠模式：关'),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -113,6 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _go(Widget screen) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  Future<void> _toggleLost(AppState s) async {
+    await s.toggleLostMode();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(s.lostMode ? '已开启寻宠模式，设备将提高上报频率' : '已关闭寻宠模式'),
+    ));
   }
 }
 

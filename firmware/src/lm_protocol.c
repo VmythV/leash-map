@@ -1,6 +1,7 @@
 #include "lm_protocol.h"
 
 #include <stdio.h>
+#include <string.h>
 
 /* Helper: advance an snprintf-style cursor; track truncation. */
 #define LM_APPEND(...)                                              \
@@ -60,4 +61,62 @@ int lm_protocol_event(char *buf, size_t n, const char *device_id, uint64_t ts,
     if (data_json) LM_APPEND(",\"data\":%s", data_json);
     LM_APPEND("}");
     return lm_finish(off, n);
+}
+
+int lm_protocol_command_ack(char *buf, size_t n, const char *device_id, uint64_t ts,
+                            const char *command_id, const char *status) {
+    char data[96];
+    int w = snprintf(data, sizeof data,
+                     "{\"command_id\":\"%s\",\"status\":\"%s\"}", command_id, status);
+    if (w < 0 || (size_t)w >= sizeof data) return -1;
+    return lm_protocol_event(buf, n, device_id, ts, "command_ack", data);
+}
+
+/* --- minimal command parser (string scanning, no JSON lib) --- */
+
+static bool find_str(const char *json, const char *key, char *out, size_t n) {
+    char pat[40];
+    snprintf(pat, sizeof pat, "\"%s\":\"", key);
+    const char *p = strstr(json, pat);
+    if (!p) return false;
+    p += strlen(pat);
+    size_t i = 0;
+    while (*p && *p != '"' && i + 1 < n) out[i++] = *p++;
+    out[i] = '\0';
+    return true;
+}
+
+static bool find_uint(const char *json, const char *key, unsigned long long *out) {
+    char pat[40];
+    snprintf(pat, sizeof pat, "\"%s\":", key);
+    const char *p = strstr(json, pat);
+    if (!p) return false;
+    p += strlen(pat);
+    return sscanf(p, "%llu", out) == 1;
+}
+
+bool lm_protocol_parse_command(const char *json, lm_command_t *cmd) {
+    memset(cmd, 0, sizeof *cmd);
+    if (!find_str(json, "command_id", cmd->command_id, sizeof cmd->command_id)) return false;
+
+    char type[20];
+    if (!find_str(json, "type", type, sizeof type)) return false;
+    if (strcmp(type, "set_mode") == 0) {
+        cmd->type = LM_CMD_SET_MODE;
+        find_str(json, "mode", cmd->params_mode, sizeof cmd->params_mode);
+    } else if (strcmp(type, "set_interval") == 0) {
+        cmd->type = LM_CMD_SET_INTERVAL;
+        unsigned long long s = 0;
+        if (find_uint(json, "seconds", &s)) cmd->interval_s = (uint32_t)s;
+    } else if (strcmp(type, "locate_now") == 0) {
+        cmd->type = LM_CMD_LOCATE_NOW;
+    } else if (strcmp(type, "ota") == 0) {
+        cmd->type = LM_CMD_OTA;
+    } else {
+        cmd->type = LM_CMD_NONE;
+    }
+
+    unsigned long long e = 0;
+    if (find_uint(json, "expires_at", &e)) cmd->expires_at = e;
+    return true;
 }
