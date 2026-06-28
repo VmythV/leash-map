@@ -32,6 +32,12 @@ void test_app_tracking_publishes(void);
 void test_app_no_fix_skips(void);
 void test_app_offline_caches_then_flushes(void);
 void test_app_applies_command_and_acks(void);
+/* ota */
+void test_ota_happy_path(void);
+void test_ota_verify_fail_discards(void);
+void test_ota_apply_fail_rolls_back(void);
+void test_ota_abort_from_any(void);
+void test_ota_progress(void);
 
 int main(void) {
     LM_RUN(test_state_boot_flow);
@@ -60,6 +66,12 @@ int main(void) {
     LM_RUN(test_app_no_fix_skips);
     LM_RUN(test_app_offline_caches_then_flushes);
     LM_RUN(test_app_applies_command_and_acks);
+
+    LM_RUN(test_ota_happy_path);
+    LM_RUN(test_ota_verify_fail_discards);
+    LM_RUN(test_ota_apply_fail_rolls_back);
+    LM_RUN(test_ota_abort_from_any);
+    LM_RUN(test_ota_progress);
 
     printf("\n%d checks, %d failed\n", lm_total, lm_fail);
     return lm_fail == 0 ? 0 : 1;

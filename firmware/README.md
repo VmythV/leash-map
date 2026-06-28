@@ -32,11 +32,13 @@ include/
   lm_drivers.h    硬件驱动抽象（HAL vtable）：gnss/modem/imu/battery/clock/log
   lm_protocol.h   上行序列化 + command_ack + 命令解析
   lm_cache.h      离线缓存环形缓冲（定长，无堆）
+  lm_ota.h        OTA 状态机（下载/校验/应用/回滚）+ 进度
   lm_app.h        应用编排器（基于 HAL 的纯逻辑）
 src/
   lm_state.c      状态转移 + 间隔策略 + 状态名/模式名映射
   lm_protocol.c   snprintf JSON 序列化 + 极简命令解析（无 JSON 库）
   lm_cache.c      环形缓冲：push 满则丢最旧、批量 drain
+  lm_ota.c        OTA 转移：校验失败丢弃、应用失败回滚 + 进度百分比
   lm_app.c        一次 tick：感知→采集→上报/缓存→重连补传→应用下行命令+ack
 tests/
   lm_test.h       极简断言框架（无依赖）
@@ -45,8 +47,22 @@ tests/
   test_cache.c    FIFO、溢出丢最旧、部分 drain
   test_command.c  命令解析（set_mode/set_interval/缺字段）
   test_app.c      mock 驱动：上报/无定位跳过/离线缓存+补传/命令应用+ack
+  test_ota.c      OTA happy path/校验失败/应用失败回滚/中止/进度
   test_main.c     测试入口
-Makefile          host 构建 + 运行测试
+bridge/           固件↔云 live bridge（仅 host 构建）
+  http.c          极简 socket HTTP/1.1 POST
+  bridge_main.c   用真实 HTTP 驱动实现 lm_drivers，跑真实 lm_app 打真实云
+Makefile          host 构建 + 运行测试；`make bridge` 构建 bridge
+```
+
+## 固件↔云 live bridge（跨端实证）
+
+`make bridge` 把**真实 lm_* 核心**与一个 socket HTTP 驱动链接成宿主程序，
+用真实 `lm_app` 主循环向运行中的服务端上报，跑出离区告警——证明固件逻辑不只是
+契约对齐，而是**真能驱动云端**（非 mock、非 Python 模拟器）。
+
+```bash
+scripts/firmware-bridge-demo.sh   # 起云端 + 建宠物/安全区 + 跑 C bridge + 看告警
 ```
 
 ## 驱动抽象与编排（mock 可测）
