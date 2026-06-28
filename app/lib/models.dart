@@ -90,8 +90,16 @@ class Pet {
   final String species;
   final String? deviceId;
   final String? lastLocationAt;
+  final bool shared;
 
-  Pet({required this.id, required this.name, required this.species, this.deviceId, this.lastLocationAt});
+  Pet({
+    required this.id,
+    required this.name,
+    required this.species,
+    this.deviceId,
+    this.lastLocationAt,
+    this.shared = false,
+  });
 
   factory Pet.fromJson(Map<String, dynamic> j) => Pet(
         id: j['id'] as String,
@@ -99,6 +107,7 @@ class Pet {
         species: j['species'] as String? ?? 'dog',
         deviceId: j['device_id'] as String?,
         lastLocationAt: j['last_location_at'] as String?,
+        shared: j['shared'] as bool? ?? false,
       );
 }
 
@@ -146,6 +155,7 @@ class AlertSettings {
   final int? lowBatteryThreshold;
   final int? quietStart;
   final int? quietEnd;
+  final String timezone;
   final bool trackingPaused;
   final int retentionDays;
 
@@ -157,6 +167,7 @@ class AlertSettings {
     this.lowBatteryThreshold,
     this.quietStart,
     this.quietEnd,
+    required this.timezone,
     required this.trackingPaused,
     required this.retentionDays,
   });
@@ -169,6 +180,7 @@ class AlertSettings {
         lowBatteryThreshold: _toIntN(j['low_battery_threshold']),
         quietStart: _toIntN(j['quiet_start']),
         quietEnd: _toIntN(j['quiet_end']),
+        timezone: j['timezone'] as String? ?? 'UTC',
         trackingPaused: j['tracking_paused'] as bool? ?? false,
         retentionDays: (j['retention_days'] as num?)?.toInt() ?? 30,
       );

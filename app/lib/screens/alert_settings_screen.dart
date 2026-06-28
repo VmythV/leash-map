@@ -5,6 +5,18 @@ import '../app_state.dart';
 import '../models.dart';
 import 'share_screen.dart';
 
+const _commonTz = [
+  'UTC',
+  'Asia/Shanghai',
+  'Asia/Hong_Kong',
+  'Asia/Tokyo',
+  'Asia/Singapore',
+  'Europe/London',
+  'Europe/Paris',
+  'America/New_York',
+  'America/Los_Angeles',
+];
+
 class AlertSettingsScreen extends StatefulWidget {
   const AlertSettingsScreen({super.key});
   @override
@@ -94,6 +106,17 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
                       const Text('（UTC）'),
                     ]),
                   ),
+                const _Section('时区'),
+                ListTile(
+                  title: const Text('勿扰/生效时段所用时区'),
+                  trailing: DropdownButton<String>(
+                    value: _commonTz.contains(s.timezone) ? s.timezone : 'UTC',
+                    items: _commonTz
+                        .map((tz) => DropdownMenuItem(value: tz, child: Text(tz)))
+                        .toList(),
+                    onChanged: (v) => v == null ? null : _save({'timezone': v}),
+                  ),
+                ),
                 const _Section('数据与隐私'),
                 SwitchListTile(
                   title: const Text('暂停追踪'),
@@ -130,6 +153,7 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
         exitEnabled: _s!.exitEnabled, enterEnabled: _s!.enterEnabled,
         lowBatteryEnabled: _s!.lowBatteryEnabled, offlineEnabled: _s!.offlineEnabled,
         lowBatteryThreshold: t, quietStart: _s!.quietStart, quietEnd: _s!.quietEnd,
+        timezone: _s!.timezone,
         trackingPaused: _s!.trackingPaused, retentionDays: _s!.retentionDays,
       );
 }

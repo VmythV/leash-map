@@ -19,6 +19,8 @@ class AppState extends ChangeNotifier {
 
   String? deviceId;
   Pet? pet;
+  List<Pet> pets = [];
+  bool selectedShared = false;
   Geofence? primaryGeofence;
   List<Geofence> geofences = [];
   AppLocation? latest;
@@ -37,8 +39,11 @@ class AppState extends ChangeNotifier {
       notifyListeners();
 
       final token = await api.createSession(displayName: 'May');
-      final pets = await api.listPets();
-      pet = pets.isNotEmpty ? pets.first : await api.createPet('Buddy');
+      var list = await api.listPets();
+      // own pet: first non-shared, or create one
+      final owned = list.where((p) => !p.shared).toList();
+      pet = owned.isNotEmpty ? owned.first : await api.createPet('Buddy');
+      selectedShared = false;
 
       deviceId = 'dev_app_${token.substring(token.length - 6)}';
       await api.bindDevice(deviceId!, pet!.id);
@@ -59,8 +64,9 @@ class AppState extends ChangeNotifier {
       final ll = await api.latestLocation(pet!.id);
       _applyLatest(ll);
       alerts = await api.listAlerts();
+      pets = await api.listPets(); // includes shared pets for the switcher
 
-      _subscribe(token);
+      _subscribe();
       status = AppStatus.ready;
       notifyListeners();
     } catch (e) {
@@ -81,9 +87,29 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void _subscribe(String token) {
+  void _subscribe() {
     _sseSub?.cancel();
-    _sseSub = sse.connect(token: token, petId: pet!.id).listen(_onEvent);
+    _sseSub = sse.connect(token: api.token!, petId: pet!.id).listen(_onEvent);
+  }
+
+  /// Switch the viewed pet (owned or shared). Owner-only actions are hidden
+  /// for shared pets in the UI.
+  Future<void> selectPet(Pet p) async {
+    pet = p;
+    selectedShared = p.shared;
+    deviceId = p.deviceId;
+    liveTrail.clear();
+    latest = null;
+    batteryPct = null;
+    online = false;
+    notifyListeners();
+
+    geofences = await api.listGeofences(p.id);
+    primaryGeofence = geofences.isNotEmpty ? geofences.first : null;
+    _applyLatest(await api.latestLocation(p.id));
+    alerts = await api.listAlerts();
+    _subscribe();
+    notifyListeners();
   }
 
   void _onEvent(SseEvent e) {

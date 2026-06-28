@@ -68,23 +68,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(s.pet?.name ?? 'LeashMap'),
+        title: _PetTitle(state: s),
         actions: [
-          IconButton(
-            tooltip: '设备设置',
-            icon: const Icon(Icons.settings_remote),
-            onPressed: () => _go(const DeviceSettingsScreen()),
-          ),
-          IconButton(
-            tooltip: '提醒设置',
-            icon: const Icon(Icons.tune),
-            onPressed: () => _go(const AlertSettingsScreen()),
-          ),
-          IconButton(
-            tooltip: '扫码绑定设备',
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: _scanBind,
-          ),
+          if (!s.selectedShared) ...[
+            IconButton(
+              tooltip: '设备设置',
+              icon: const Icon(Icons.settings_remote),
+              onPressed: () => _go(const DeviceSettingsScreen()),
+            ),
+            IconButton(
+              tooltip: '提醒设置',
+              icon: const Icon(Icons.tune),
+              onPressed: () => _go(const AlertSettingsScreen()),
+            ),
+            IconButton(
+              tooltip: '扫码绑定设备',
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: _scanBind,
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.only(right: 14),
             child: Row(children: [
@@ -123,19 +125,29 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ]),
-          const SizedBox(height: 10),
-          FilledButton.tonalIcon(
-            onPressed: () => _toggleLost(s),
-            icon: Icon(s.lostMode ? Icons.gps_fixed : Icons.travel_explore),
-            label: Text(s.lostMode ? '寻宠模式：开（高频上报）' : '寻宠模式：关'),
-          ),
+          if (!s.selectedShared) ...[
+            const SizedBox(height: 10),
+            FilledButton.tonalIcon(
+              onPressed: () => _toggleLost(s),
+              icon: Icon(s.lostMode ? Icons.gps_fixed : Icons.travel_explore),
+              label: Text(s.lostMode ? '寻宠模式：开（高频上报）' : '寻宠模式：关'),
+            ),
+          ],
+          if (s.selectedShared)
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Text('共享查看：仅可查看位置/轨迹/活动/告警',
+                  textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+            ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: s.runDemo,
-        icon: const Icon(Icons.directions_walk),
-        label: const Text('模拟走动'),
-      ),
+      floatingActionButton: s.selectedShared
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: s.runDemo,
+              icon: const Icon(Icons.directions_walk),
+              label: const Text('模拟走动'),
+            ),
     );
   }
 
@@ -159,6 +171,44 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(s.lostMode ? '已开启寻宠模式，设备将提高上报频率' : '已关闭寻宠模式'),
     ));
+  }
+}
+
+class _PetTitle extends StatelessWidget {
+  final AppState state;
+  const _PetTitle({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final pets = state.pets;
+    final name = state.pet?.name ?? 'LeashMap';
+    if (pets.length <= 1) return Text(name);
+    return PopupMenuButton<String>(
+      onSelected: (id) {
+        final p = pets.firstWhere((e) => e.id == id);
+        state.selectPet(p);
+      },
+      itemBuilder: (_) => pets
+          .map((p) => PopupMenuItem(
+                value: p.id,
+                child: Row(children: [
+                  Text(p.name),
+                  if (p.shared) const Padding(
+                    padding: EdgeInsets.only(left: 6),
+                    child: Icon(Icons.group, size: 14, color: Colors.grey),
+                  ),
+                ]),
+              ))
+          .toList(),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(name),
+        if (state.selectedShared) const Padding(
+          padding: EdgeInsets.only(left: 6),
+          child: Icon(Icons.group, size: 16),
+        ),
+        const Icon(Icons.arrow_drop_down),
+      ]),
+    );
   }
 }
 
