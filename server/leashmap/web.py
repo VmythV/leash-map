@@ -21,6 +21,16 @@ def owned_pet(store: Store, user: User, pet_id: str) -> PetRecord:
     return pet
 
 
+def viewable_pet(store: Store, user: User, pet_id: str) -> PetRecord:
+    """Read access: the owner or a user the pet is shared with."""
+    pet = store.get_pet(pet_id)
+    if pet is None:
+        raise APIError("not_found", "Pet not found")
+    if pet.owner_id == user.id or store.is_shared_with(pet_id, user.id):
+        return pet
+    raise APIError("permission_denied", "Pet is not visible to this user")
+
+
 def owned_device(store: Store, user: User, device_id: str) -> PetRecord:
     """Resolve a device to its bound pet and verify the user owns it."""
     pet_id = store.pet_for_device(device_id)

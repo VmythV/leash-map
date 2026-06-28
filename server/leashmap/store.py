@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from . import db
 from .db import (
@@ -25,9 +25,11 @@ from .db import (
     NotificationDeliveryRow,
     PetRow,
     PetSettingsRow,
+    PetShareRow,
     SessionRow,
     UserRow,
 )
+from datetime import timedelta
 from .ids import gen_id
 from .schemas import LocationPoint, User
 
@@ -212,6 +214,11 @@ class Store:
             u = s.get(UserRow, row.user_id)
             return User(id=u.id, display_name=u.display_name) if u else None
 
+    def get_user(self, user_id: str) -> Optional[User]:
+        with db.SessionLocal() as s:
+            u = s.get(UserRow, user_id)
+            return User(id=u.id, display_name=u.display_name) if u else None
+
     # ---- pets / bindings ----
     def create_pet(self, owner_id: str, name: str, species: str) -> PetRecord:
         rec = PetRecord(id=gen_id("pet"), owner_id=owner_id, name=name, species=species)
@@ -234,6 +241,35 @@ class Store:
         with db.SessionLocal() as s:
             r = s.get(BindingRow, device_id)
             return r.pet_id if r else None
+
+    # ---- sharing ----
+    def add_share(self, pet_id: str, user_id: str) -> None:
+        with db.SessionLocal() as s:
+            if s.get(PetShareRow, (pet_id, user_id)) is None:
+                s.add(PetShareRow(pet_id=pet_id, user_id=user_id, created_at=utcnow()))
+                s.commit()
+
+    def remove_share(self, pet_id: str, user_id: str) -> None:
+        with db.SessionLocal() as s:
+            row = s.get(PetShareRow, (pet_id, user_id))
+            if row:
+                s.delete(row)
+                s.commit()
+
+    def shares_for_pet(self, pet_id: str) -> List[str]:
+        with db.SessionLocal() as s:
+            return [r.user_id for r in s.scalars(
+                select(PetShareRow).where(PetShareRow.pet_id == pet_id)).all()]
+
+    def is_shared_with(self, pet_id: str, user_id: str) -> bool:
+        with db.SessionLocal() as s:
+            return s.get(PetShareRow, (pet_id, user_id)) is not None
+
+    def pets_shared_with(self, user_id: str) -> List[PetRecord]:
+        with db.SessionLocal() as s:
+            pet_ids = [r.pet_id for r in s.scalars(
+                select(PetShareRow).where(PetShareRow.user_id == user_id)).all()]
+            return [_pet(s.get(PetRow, pid)) for pid in pet_ids if s.get(PetRow, pid)]
 
     def bind(self, device_id: str, pet_id: str) -> datetime:
         bound_at = utcnow()
@@ -291,6 +327,22 @@ class Store:
                 ).order_by(LocationRow.ts.asc())
             ).all()
             return [_loc(r) for r in rows]
+
+    def purge_expired_locations(self, now: datetime) -> int:
+        """Delete location points older than each pet's retention window."""
+        total = 0
+        with db.SessionLocal() as s:
+            for pet in s.scalars(select(PetRow)).all():
+                settings = s.get(PetSettingsRow, pet.id)
+                days = settings.retention_days if settings else 30
+                cutoff = (now - timedelta(days=days)).replace(tzinfo=None)
+                res = s.execute(
+                    delete(LocationRow).where(
+                        LocationRow.pet_id == pet.id, LocationRow.dt < cutoff)
+                )
+                total += res.rowcount or 0
+            s.commit()
+        return total
 
     # ---- device status / events ----
     def touch_device(self, device_id: str, *, mode: Optional[str] = None,

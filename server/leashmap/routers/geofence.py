@@ -9,7 +9,7 @@ from ..deps import app_auth, get_store
 from ..errors import APIError
 from ..schemas import Geofence, GeofenceCreate, GeofenceUpdate, User
 from ..store import GeofenceRecord
-from ..web import owned_pet
+from ..web import owned_pet, viewable_pet
 
 router = APIRouter(prefix="/v1/pets", tags=["geofence"])
 
@@ -32,7 +32,7 @@ def _to_geofence(rec: GeofenceRecord) -> Geofence:
 
 @router.get("/{pet_id}/geofences")
 def list_geofences(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
-    owned_pet(store, user, pet_id)
+    viewable_pet(store, user, pet_id)
     data: List[Geofence] = [_to_geofence(g) for g in store.geofences_for_pet(pet_id)]
     return {"data": data}
 

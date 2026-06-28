@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../models.dart';
+import 'share_screen.dart';
 
 class AlertSettingsScreen extends StatefulWidget {
   const AlertSettingsScreen({super.key});
@@ -93,6 +94,33 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
                       const Text('（UTC）'),
                     ]),
                   ),
+                const _Section('数据与隐私'),
+                SwitchListTile(
+                  title: const Text('暂停追踪'),
+                  subtitle: const Text('暂停期间设备上报的位置将被丢弃，不记录、不告警'),
+                  value: s.trackingPaused,
+                  onChanged: (v) => _save({'tracking_paused': v}),
+                ),
+                ListTile(
+                  title: const Text('位置历史保留'),
+                  trailing: DropdownButton<int>(
+                    value: [7, 30, 90, 365].contains(s.retentionDays) ? s.retentionDays : 30,
+                    items: const [
+                      DropdownMenuItem(value: 7, child: Text('7 天')),
+                      DropdownMenuItem(value: 30, child: Text('30 天')),
+                      DropdownMenuItem(value: 90, child: Text('90 天')),
+                      DropdownMenuItem(value: 365, child: Text('1 年')),
+                    ],
+                    onChanged: (v) => v == null ? null : _save({'retention_days': v}),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.group_outlined),
+                  title: const Text('共享给家人'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ShareScreen())),
+                ),
               ],
             ),
     );

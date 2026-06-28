@@ -27,11 +27,13 @@ log = logging.getLogger("leashmap.request")
 
 
 async def _offline_scan_loop() -> None:
+    from .store import utcnow
     interval = settings.offline_scan_interval_seconds
     while True:
         await asyncio.sleep(interval)
         try:
             scan_offline(store, broker)
+            store.purge_expired_locations(utcnow())  # enforce retention
         except Exception:  # pragma: no cover - background task must not die
             pass
 

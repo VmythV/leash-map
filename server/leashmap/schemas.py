@@ -150,6 +150,11 @@ class Pet(BaseModel):
     species: Species
     device_id: Optional[str] = None
     last_location_at: Optional[str] = None
+    shared: bool = False  # true when visible via sharing rather than ownership
+
+
+class ShareRequest(BaseModel):
+    user_id: str
 
 
 class BindRequest(BaseModel):

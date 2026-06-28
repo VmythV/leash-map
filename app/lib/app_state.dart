@@ -172,6 +172,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? get userId => api.userId;
+
+  Future<List<String>> loadShares() => api.listShares(pet!.id);
+  Future<List<String>> addShare(String uid) => api.addShare(pet!.id, uid);
+  Future<List<String>> removeShare(String uid) => api.removeShare(pet!.id, uid);
+
   Future<DeviceConfig> loadDeviceConfig() => api.getDeviceConfig(deviceId!);
 
   Future<DeviceConfig> saveDeviceConfig(Map<String, dynamic> patch) =>

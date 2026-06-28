@@ -11,6 +11,9 @@ class ApiClient {
 
   final String baseUrl;
   String? _token;
+  String? _userId;
+
+  String? get userId => _userId;
 
   Map<String, String> get _headers => {
         'content-type': 'application/json',
@@ -40,8 +43,26 @@ class ApiClient {
   Future<String> createSession({String? displayName}) async {
     final r = await http.post(_u('/v1/auth/demo-session'),
         headers: _headers, body: jsonEncode({'display_name': displayName}));
-    _token = (_json(r) as Map<String, dynamic>)['token'] as String;
+    final body = _json(r) as Map<String, dynamic>;
+    _token = body['token'] as String;
+    _userId = (body['user'] as Map<String, dynamic>?)?['id'] as String?;
     return _token!;
+  }
+
+  Future<List<String>> listShares(String petId) async {
+    final r = await http.get(_u('/v1/pets/$petId/shares'), headers: _headers);
+    return ((_json(r) as Map<String, dynamic>)['data'] as List).cast<String>();
+  }
+
+  Future<List<String>> addShare(String petId, String userId) async {
+    final r = await http.post(_u('/v1/pets/$petId/shares'),
+        headers: _headers, body: jsonEncode({'user_id': userId}));
+    return ((_json(r) as Map<String, dynamic>)['shares'] as List).cast<String>();
+  }
+
+  Future<List<String>> removeShare(String petId, String userId) async {
+    final r = await http.delete(_u('/v1/pets/$petId/shares/$userId'), headers: _headers);
+    return ((_json(r) as Map<String, dynamic>)['shares'] as List).cast<String>();
   }
 
   Future<List<Pet>> listPets() async {

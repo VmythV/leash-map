@@ -11,14 +11,14 @@ from ..deps import app_auth, get_store
 from ..geo import douglas_peucker, haversine_m
 from ..schemas import ActivitySummary, LatestLocation, Trail, User
 from ..store import to_iso
-from ..web import owned_pet, to_app_location, to_device_status
+from ..web import to_app_location, to_device_status, viewable_pet
 
 router = APIRouter(prefix="/v1/pets", tags=["location"])
 
 
 @router.get("/{pet_id}/location/latest", response_model=LatestLocation)
 def latest_location(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
-    pet = owned_pet(store, user, pet_id)
+    pet = viewable_pet(store, user, pet_id)
     rec = store.latest_for_pet(pet_id)
     st = store.get_device_status(pet.device_id) if pet.device_id else None
     return LatestLocation(
@@ -37,7 +37,7 @@ def trail(
     user: User = Depends(app_auth),
     store=Depends(get_store),
 ):
-    owned_pet(store, user, pet_id)
+    viewable_pet(store, user, pet_id)
     recs = store.trail(pet_id, from_, to)
 
     # distance is computed on the full-resolution trail
@@ -67,7 +67,7 @@ def activity(
     user: User = Depends(app_auth),
     store=Depends(get_store),
 ):
-    owned_pet(store, user, pet_id)
+    viewable_pet(store, user, pet_id)
     recs = store.trail(pet_id, from_, to)
     summary = activity_summary(recs)
     return ActivitySummary(

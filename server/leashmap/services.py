@@ -165,6 +165,12 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
 
     pet_id = store.pet_for_device(device_id)
 
+    settings_rec = store.get_pet_settings(pet_id) if pet_id else None
+    if settings_rec is not None and settings_rec.tracking_paused:
+        # privacy pause: drop the point entirely (no storage, no alerts)
+        metrics.inc("locations_paused")
+        return "rejected"
+
     reason = _quality_reject_reason(store, device_id, pet_id, p)
     if reason is not None:
         metrics.inc("locations_rejected")
@@ -177,7 +183,6 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
 
     if pet_id:
         pet = store.get_pet(pet_id)
-        settings_rec = store.get_pet_settings(pet_id)
         payload = {"pet_id": pet_id, "device_id": device_id}
         payload.update(_app_location_payload(rec))
         broker.publish(pet.owner_id, "location.updated", payload)

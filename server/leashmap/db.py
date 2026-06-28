@@ -142,6 +142,13 @@ class NotificationDeliveryRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class PetShareRow(Base):
+    __tablename__ = "pet_shares"
+    pet_id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String, primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 class DeviceConfigRow(Base):
     __tablename__ = "device_config"
     device_id: Mapped[str] = mapped_column(String, primary_key=True)

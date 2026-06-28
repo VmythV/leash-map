@@ -18,6 +18,7 @@ from ..schemas import (
     DeviceConfigUpdate,
     Pet,
     PetCreate,
+    ShareRequest,
     User,
 )
 from ..store import to_iso
@@ -26,7 +27,7 @@ from ..web import owned_device, owned_pet
 router = APIRouter(prefix="/v1", tags=["pets"])
 
 
-def _to_pet(store, rec) -> Pet:
+def _to_pet(store, rec, shared: bool = False) -> Pet:
     latest = store.latest_for_pet(rec.id)
     return Pet(
         id=rec.id,
@@ -34,13 +35,39 @@ def _to_pet(store, rec) -> Pet:
         species=rec.species,
         device_id=rec.device_id,
         last_location_at=to_iso(latest.dt) if latest else None,
+        shared=shared,
     )
 
 
 @router.get("/pets")
 def list_pets(user: User = Depends(app_auth), store=Depends(get_store)):
     data: List[Pet] = [_to_pet(store, p) for p in store.pets_for_owner(user.id)]
+    data += [_to_pet(store, p, shared=True) for p in store.pets_shared_with(user.id)]
     return {"data": data, "page": {"next_cursor": None}}
+
+
+@router.get("/pets/{pet_id}/shares")
+def list_shares(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_pet(store, user, pet_id)  # only the owner manages shares
+    return {"data": store.shares_for_pet(pet_id)}
+
+
+@router.post("/pets/{pet_id}/shares")
+def add_share(pet_id: str, body: ShareRequest, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_pet(store, user, pet_id)
+    if store.get_user(body.user_id) is None:
+        raise APIError("not_found", "Target user not found")
+    if body.user_id == user.id:
+        raise APIError("invalid_argument", "Cannot share with yourself")
+    store.add_share(pet_id, body.user_id)
+    return {"ok": True, "shares": store.shares_for_pet(pet_id)}
+
+
+@router.delete("/pets/{pet_id}/shares/{user_id}")
+def remove_share(pet_id: str, user_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_pet(store, user, pet_id)
+    store.remove_share(pet_id, user_id)
+    return {"ok": True, "shares": store.shares_for_pet(pet_id)}
 
 
 @router.post("/pets", response_model=Pet, status_code=201)
