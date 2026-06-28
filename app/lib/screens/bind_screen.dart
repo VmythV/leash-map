@@ -38,7 +38,7 @@ class _BindScreenState extends State<BindScreen> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await context.read<AppState>().rebindDevice(deviceId);
+      await context.read<AppState>().addDevice(deviceId);
       if (!mounted) return;
       Navigator.of(context).pop(deviceId);
     } catch (e) {
@@ -62,7 +62,7 @@ class _BindScreenState extends State<BindScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('扫码绑定设备')),
+      appBar: AppBar(title: const Text('添加设备')),
       body: Column(
         children: [
           Expanded(

@@ -265,6 +265,36 @@ class ActivitySummary {
       );
 }
 
+class DeviceInfo {
+  final String deviceId;
+  final String boundAt;
+  final bool primary;
+  final bool online;
+  final String? mode;
+  final int? batteryPct;
+  final String? lastSeenAt;
+
+  DeviceInfo({
+    required this.deviceId,
+    required this.boundAt,
+    required this.primary,
+    required this.online,
+    this.mode,
+    this.batteryPct,
+    this.lastSeenAt,
+  });
+
+  factory DeviceInfo.fromJson(Map<String, dynamic> j) => DeviceInfo(
+        deviceId: j['device_id'] as String,
+        boundAt: j['bound_at'] as String? ?? '',
+        primary: j['primary'] as bool? ?? false,
+        online: j['online'] as bool? ?? false,
+        mode: j['mode'] as String?,
+        batteryPct: _toIntN(j['battery_pct']),
+        lastSeenAt: j['last_seen_at'] as String?,
+      );
+}
+
 class DeviceConfig {
   final String deviceId;
   final String ledPattern; // off/solid/blink/morse

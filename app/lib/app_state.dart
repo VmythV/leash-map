@@ -146,13 +146,27 @@ class AppState extends ChangeNotifier {
         createdAt: (d['created_at'] ?? '') as String,
       );
 
-  /// Bind a (scanned or typed) device id to the current pet, then refresh.
-  Future<void> rebindDevice(String newDeviceId) async {
+  List<DeviceInfo> devices = [];
+
+  Future<List<DeviceInfo>> loadDevices() async {
+    devices = await api.listDevices(pet!.id);
+    notifyListeners();
+    return devices;
+  }
+
+  /// Bind an additional (scanned or typed) device to the current pet.
+  Future<void> addDevice(String newDeviceId) async {
     await api.bindDevice(newDeviceId, pet!.id);
-    deviceId = newDeviceId;
-    liveTrail.clear();
-    final ll = await api.latestLocation(pet!.id);
-    _applyLatest(ll);
+    deviceId = newDeviceId; // newest becomes primary
+    await loadDevices();
+  }
+
+  Future<void> unbindDevice(String id) async {
+    await api.unbindDevice(pet!.id, id);
+    await loadDevices();
+    if (deviceId == id) {
+      deviceId = devices.isNotEmpty ? devices.firstWhere((d) => d.primary, orElse: () => devices.first).deviceId : null;
+    }
     notifyListeners();
   }
 

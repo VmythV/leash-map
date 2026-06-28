@@ -56,7 +56,8 @@ lib/
     trail_screen.dart  轨迹回放（近 24 小时）
     safezone_screen.dart 安全区列表 + 新建
     alerts_screen.dart 告警列表 + 确认
-    bind_screen.dart   扫码绑定设备（mobile_scanner）+ 手动输入兜底
+    devices_screen.dart 设备管理：多设备列表（在线/电量/主设备）+ 添加 + 解绑
+    bind_screen.dart   添加设备：扫码（mobile_scanner）+ 手动输入兜底
 test/
   widget_test.dart     启动 smoke 测试
   bind_parse_test.dart 设备 ID 解析单测
@@ -69,7 +70,7 @@ test/
 
 已实现（补充）：真实地图（flutter_map + OSM）、**镜头平滑跟随**（位置更新时跟随宠物，
 手动拖动释放跟随，定位按钮重新开启）、寻宠模式开关（下行命令）、
-**扫码绑定设备**（mobile_scanner，二维码含 `dev_` ID 或 `?device=` URL；手动输入兜底）。
+**多设备管理**（一宠物多设备：列表/添加/解绑，扫码或手输；二维码含 `dev_` ID 或 `?device=` URL）。
 
 > Web 扫码需浏览器摄像头权限（HTTPS 或 localhost）；不可用时用手动输入。
 

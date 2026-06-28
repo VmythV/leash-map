@@ -83,6 +83,17 @@ class ApiClient {
     _json(r);
   }
 
+  Future<List<DeviceInfo>> listDevices(String petId) async {
+    final r = await http.get(_u('/v1/pets/$petId/devices'), headers: _headers);
+    final data = (_json(r) as Map<String, dynamic>)['data'] as List;
+    return data.map((e) => DeviceInfo.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> unbindDevice(String petId, String deviceId) async {
+    final r = await http.delete(_u('/v1/pets/$petId/devices/$deviceId'), headers: _headers);
+    _json(r);
+  }
+
   Future<LatestLocation> latestLocation(String petId) async {
     final r = await http.get(_u('/v1/pets/$petId/location/latest'), headers: _headers);
     return LatestLocation.fromJson(_json(r) as Map<String, dynamic>);
