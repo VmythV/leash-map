@@ -113,6 +113,7 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
         return  # ignore low-accuracy points for geofencing (avoid false alarms)
     local_now = _local(utcnow(), st.timezone)
     quiet = _hour_in_window(local_now.hour, st.quiet_start, st.quiet_end)
+    label = _device_label(store, rec.device_id)
     for gf in store.geofences_for_pet(rec.pet_id):
         if not gf.enabled or not _within_active_window(gf.active_start, gf.active_end, local_now):
             continue
@@ -124,7 +125,7 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
                 _create_alert(
                     store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
                     type_="enter_zone", severity="info",
-                    message=f"{pet_name} 已回到安全区域「{gf.name}」",
+                    message=f"{pet_name} 已回到安全区域「{gf.name}」（设备：{label}）",
                     location_point_id=rec.id, deliver=not quiet,
                 )
             if gf.open_alert_id:
@@ -138,7 +139,7 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
                 alert = _create_alert(
                     store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
                     type_="exit_zone", severity="warning",
-                    message=f"{pet_name} 可能离开了安全区域「{gf.name}」",
+                    message=f"{pet_name} 可能离开了安全区域「{gf.name}」（设备：{label}）",
                     location_point_id=rec.id, deliver=not quiet,
                 )
                 open_alert_id = alert.id

@@ -57,6 +57,23 @@ def test_offline_per_device():
     assert scan_offline(store, broker, now=future) == 2  # one per device
 
 
+def test_exit_alert_labels_trigger_device():
+    c, h, pet_id = _setup()
+    c.put("/v1/devices/dev_a/config", json={"name": "项圈"}, headers=h)
+    c.post(f"/v1/pets/{pet_id}/geofences",
+           json={"name": "家", "center_lat": 31.2304, "center_lng": 121.4737, "radius_m": 100},
+           headers=h)
+    now = int(time.time())
+    # dev_a leaves the zone (two outside points)
+    c.post("/v1/device/locations", json=_loc("dev_a", 1, now), headers=_dev())  # inside
+    c.post("/v1/device/locations", json={**_loc("dev_a", 2, now + 60), "lat": 31.2316}, headers=_dev())
+    c.post("/v1/device/locations", json={**_loc("dev_a", 3, now + 120), "lat": 31.2318}, headers=_dev())
+    exits = [a for a in c.get("/v1/alerts", headers=h).json()["data"] if a["type"] == "exit_zone"]
+    assert len(exits) == 1
+    assert exits[0]["device_id"] == "dev_a"
+    assert "项圈" in exits[0]["message"]
+
+
 def test_device_rename_shows_in_list_and_alert():
     c, h, pet_id = _setup()
     c.put("/v1/devices/dev_a/config", json={"name": "项圈"}, headers=h)
