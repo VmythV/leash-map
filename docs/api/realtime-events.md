@@ -57,8 +57,11 @@ data: {"pet_id":"pet_2b7d4f10a6c1","device_id":"dev_mvp_001","ts":"2026-06-27T08
 `status` ∈ `open` / `acknowledged` / `resolved`。
 
 > 告警是否生成由每宠物开关（`GET/PUT /v1/pets/{id}/alert-settings`）与每围栏
-> `alert_on_exit` / `alert_on_enter` 决定。勿扰时段只抑制站外推送投递，
-> `alert.created` 仍会经 SSE 实时下发（站内可见）。
+> `alert_on_exit` / `alert_on_enter` 决定。勿扰时段（按 `timezone` 本地小时判定）
+> 只抑制站外推送投递，`alert.created` 仍会经 SSE 实时下发（站内可见）。
+>
+> **共享 fan-out**：`location.updated` / `alert.created` / `device.*` 会同时推送给
+> 宠物的 owner 与所有被共享用户；被共享用户的 `GET /v1/alerts` 也能看到该宠物的告警。
 
 ## 4. 围栏离区防误报（影响 alert.created 时机）
 

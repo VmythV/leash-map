@@ -96,6 +96,7 @@ class PetSettingsRow(Base):
     low_battery_threshold: Mapped[Optional[int]] = mapped_column(nullable=True)
     quiet_start: Mapped[Optional[int]] = mapped_column(nullable=True)  # local hour
     quiet_end: Mapped[Optional[int]] = mapped_column(nullable=True)
+    timezone: Mapped[str] = mapped_column(String, default="UTC")  # IANA tz for windows
     tracking_paused: Mapped[bool] = mapped_column(default=False)  # batch 3
     retention_days: Mapped[int] = mapped_column(default=30)  # batch 3
 

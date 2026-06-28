@@ -287,6 +287,7 @@ class AlertSettings(BaseModel):
     low_battery_threshold: Optional[int] = None
     quiet_start: Optional[int] = None
     quiet_end: Optional[int] = None
+    timezone: str = "UTC"
     tracking_paused: bool = False
     retention_days: int = 30
 
@@ -299,6 +300,7 @@ class AlertSettingsUpdate(BaseModel):
     low_battery_threshold: Optional[int] = Field(default=None, ge=1, le=100)
     quiet_start: Optional[int] = Field(default=None, ge=0, le=23)
     quiet_end: Optional[int] = Field(default=None, ge=0, le=23)
+    timezone: Optional[str] = None
     tracking_paused: Optional[bool] = None
     retention_days: Optional[int] = Field(default=None, ge=1, le=3650)
 

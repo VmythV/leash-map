@@ -686,6 +686,7 @@ components:
         low_battery_threshold: { type: [integer, "null"] }
         quiet_start: { type: [integer, "null"], minimum: 0, maximum: 23 }
         quiet_end: { type: [integer, "null"], minimum: 0, maximum: 23 }
+        timezone: { type: string, default: "UTC", description: "IANA tz for quiet/active windows" }
         tracking_paused: { type: boolean }
         retention_days: { type: integer }
 

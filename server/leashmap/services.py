@@ -6,7 +6,8 @@ and docs/api/realtime-events.md.
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import List, Optional
+from zoneinfo import ZoneInfo
 
 from .broker import Broker
 from .config import settings
@@ -28,14 +29,33 @@ def _hour_in_window(hour: int, start: Optional[int], end: Optional[int]) -> bool
     return hour >= start or hour < end  # overnight
 
 
+def _local(now: datetime, tz_name: Optional[str]) -> datetime:
+    """Convert a UTC instant to the pet's local time; UTC on bad/missing tz."""
+    try:
+        return now.astimezone(ZoneInfo(tz_name or "UTC"))
+    except Exception:
+        return now
+
+
 def _in_quiet_hours(st: PetSettingsRecord, now: datetime) -> bool:
-    return _hour_in_window(now.hour, st.quiet_start, st.quiet_end)
+    return _hour_in_window(_local(now, st.timezone).hour, st.quiet_start, st.quiet_end)
 
 
-def _within_active_window(start: Optional[int], end: Optional[int], now: datetime) -> bool:
+def _within_active_window(start: Optional[int], end: Optional[int], local_now: datetime) -> bool:
     if start is None or end is None:
         return True
-    return _hour_in_window(now.hour, start, end)
+    return _hour_in_window(local_now.hour, start, end)
+
+
+# ---- realtime fan-out to a pet's audience (owner + shared users) ----
+def _audience(store: Store, pet_id: str, owner_id: str) -> List[str]:
+    return [owner_id, *store.shares_for_pet(pet_id)]
+
+
+def _publish_audience(store: Store, broker: Broker, pet_id: str, owner_id: str,
+                      event: str, data: dict) -> None:
+    for uid in _audience(store, pet_id, owner_id):
+        broker.publish(uid, event, data)
 
 
 def _app_location_payload(rec: LocationRecord) -> dict:
@@ -68,9 +88,9 @@ def _create_alert(
         user_id=user_id, pet_id=pet_id, device_id=device_id, type_=type_,
         severity=severity, message=message, location_point_id=location_point_id,
     )
-    # Always pushed to the App in real time; quiet hours only suppress
-    # out-of-band delivery (push/SMS).
-    broker.publish(user_id, "alert.created", {
+    # Always pushed to the App in real time (owner + shared users); quiet hours
+    # only suppress out-of-band delivery (push/SMS).
+    _publish_audience(store, broker, pet_id, user_id, "alert.created", {
         "alert_id": alert.id,
         "pet_id": pet_id,
         "device_id": device_id,
@@ -91,10 +111,10 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
                     pet_name: str, st: PetSettingsRecord) -> None:
     if rec.accuracy_m > settings.geofence_accuracy_threshold_m:
         return  # ignore low-accuracy points for geofencing (avoid false alarms)
-    now = utcnow()
-    quiet = _in_quiet_hours(st, now)
+    local_now = _local(utcnow(), st.timezone)
+    quiet = _hour_in_window(local_now.hour, st.quiet_start, st.quiet_end)
     for gf in store.geofences_for_pet(rec.pet_id):
-        if not gf.enabled or not _within_active_window(gf.active_start, gf.active_end, now):
+        if not gf.enabled or not _within_active_window(gf.active_start, gf.active_end, local_now):
             continue
         inside = haversine_m(rec.lat, rec.lng, gf.center_lat, gf.center_lng) <= gf.radius_m
 
@@ -185,8 +205,8 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
         pet = store.get_pet(pet_id)
         payload = {"pet_id": pet_id, "device_id": device_id}
         payload.update(_app_location_payload(rec))
-        broker.publish(pet.owner_id, "location.updated", payload)
-        broker.publish(pet.owner_id, "device.battery_updated", {
+        _publish_audience(store, broker, pet_id, pet.owner_id, "location.updated", payload)
+        _publish_audience(store, broker, pet_id, pet.owner_id, "device.battery_updated", {
             "device_id": device_id,
             "pet_id": pet_id,
             "battery_pct": st.battery_pct,
@@ -233,7 +253,7 @@ def scan_offline(store: Store, broker: Broker, now: Optional[datetime] = None) -
             created += 1
         elif not offline and existing is not None:
             store.set_alert_status(existing.id, "resolved")
-            broker.publish(pet.owner_id, "device.status_updated", {
+            _publish_audience(store, broker, pet_id, pet.owner_id, "device.status_updated", {
                 "device_id": st.device_id, "pet_id": pet_id, "online": True,
                 "mode": st.mode, "last_seen_at": to_iso(st.last_seen) if st.last_seen else None,
             })
@@ -245,7 +265,7 @@ def process_heartbeat(store: Store, broker: Broker, device_id: str, mode: str, b
     pet_id = store.pet_for_device(device_id)
     if pet_id:
         pet = store.get_pet(pet_id)
-        broker.publish(pet.owner_id, "device.status_updated", {
+        _publish_audience(store, broker, pet_id, pet.owner_id, "device.status_updated", {
             "device_id": device_id,
             "pet_id": pet_id,
             "online": True,

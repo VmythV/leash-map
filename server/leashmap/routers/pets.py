@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 from typing import List
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -104,6 +105,7 @@ def _to_settings(rec) -> AlertSettings:
         low_battery_threshold=rec.low_battery_threshold,
         quiet_start=rec.quiet_start,
         quiet_end=rec.quiet_end,
+        timezone=rec.timezone,
         tracking_paused=rec.tracking_paused,
         retention_days=rec.retention_days,
     )
@@ -124,6 +126,11 @@ def update_alert_settings(
 ):
     owned_pet(store, user, pet_id)
     fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    if "timezone" in fields:
+        try:
+            ZoneInfo(fields["timezone"])
+        except Exception:
+            raise APIError("invalid_argument", f"Unknown timezone: {fields['timezone']}")
     return _to_settings(store.update_pet_settings(pet_id, **fields))
 
 

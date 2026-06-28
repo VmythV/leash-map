@@ -95,6 +95,7 @@ class PetSettingsRecord:
     low_battery_threshold: Optional[int] = None
     quiet_start: Optional[int] = None
     quiet_end: Optional[int] = None
+    timezone: str = "UTC"
     tracking_paused: bool = False
     retention_days: int = 30
 
@@ -166,7 +167,7 @@ def _settings(r: PetSettingsRow) -> PetSettingsRecord:
         pet_id=r.pet_id, exit_enabled=r.exit_enabled, enter_enabled=r.enter_enabled,
         low_battery_enabled=r.low_battery_enabled, offline_enabled=r.offline_enabled,
         low_battery_threshold=r.low_battery_threshold,
-        quiet_start=r.quiet_start, quiet_end=r.quiet_end,
+        quiet_start=r.quiet_start, quiet_end=r.quiet_end, timezone=r.timezone,
         tracking_paused=r.tracking_paused, retention_days=r.retention_days,
     )
 
@@ -460,6 +461,21 @@ class Store:
     def alerts_for_owner(self, owner_id: str, status: Optional[str] = None, limit: int = 50) -> List[AlertRecord]:
         with db.SessionLocal() as s:
             q = select(AlertRow).where(AlertRow.user_id == owner_id)
+            if status:
+                q = q.where(AlertRow.status == status)
+            q = q.order_by(AlertRow.created_at.desc()).limit(limit)
+            return [_alert(r) for r in s.scalars(q).all()]
+
+    def alerts_for_viewer(self, user_id: str, status: Optional[str] = None, limit: int = 50) -> List[AlertRecord]:
+        """Alerts for every pet the user can view (owned + shared)."""
+        with db.SessionLocal() as s:
+            owned = [p.id for p in s.scalars(select(PetRow).where(PetRow.owner_id == user_id)).all()]
+            shared = [r.pet_id for r in s.scalars(
+                select(PetShareRow).where(PetShareRow.user_id == user_id)).all()]
+            pet_ids = set(owned) | set(shared)
+            if not pet_ids:
+                return []
+            q = select(AlertRow).where(AlertRow.pet_id.in_(pet_ids))
             if status:
                 q = q.where(AlertRow.status == status)
             q = q.order_by(AlertRow.created_at.desc()).limit(limit)

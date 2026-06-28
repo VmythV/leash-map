@@ -35,7 +35,7 @@ def list_alerts(
     user: User = Depends(app_auth),
     store=Depends(get_store),
 ):
-    rows = store.alerts_for_owner(user.id, status)[:limit]
+    rows = store.alerts_for_viewer(user.id, status, limit)
     data: List[Alert] = [_to_alert(a) for a in rows]
     return {"data": data, "page": {"next_cursor": None}}
 
@@ -43,7 +43,10 @@ def list_alerts(
 @router.post("/{alert_id}/ack", response_model=Alert)
 def ack_alert(alert_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
     a = store.find_alert(alert_id)
-    if a is None or a.user_id != user.id:
+    if a is None:
+        raise APIError("not_found", "Alert not found")
+    pet = store.get_pet(a.pet_id)
+    if pet is None or (pet.owner_id != user.id and not store.is_shared_with(a.pet_id, user.id)):
         raise APIError("not_found", "Alert not found")
     if a.status == "open":
         a = store.set_alert_status(alert_id, "acknowledged", acknowledged_at=utcnow())
