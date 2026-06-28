@@ -71,11 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
         title: _PetTitle(state: s),
         actions: [
           if (!s.selectedShared) ...[
-            IconButton(
-              tooltip: '设备设置',
-              icon: const Icon(Icons.settings_remote),
-              onPressed: () => _go(const DeviceSettingsScreen()),
-            ),
+            if (s.deviceId != null)
+              IconButton(
+                tooltip: '主设备设置',
+                icon: const Icon(Icons.settings_remote),
+                onPressed: () => _go(DeviceSettingsScreen(deviceId: s.deviceId!)),
+              ),
             IconButton(
               tooltip: '提醒设置',
               icon: const Icon(Icons.tune),

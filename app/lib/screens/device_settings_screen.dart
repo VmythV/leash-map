@@ -16,8 +16,10 @@ const _powerModes = {
   'high_accuracy': '高精度',
 };
 
+/// Per-device settings (LED / power / name). Targets a specific device id.
 class DeviceSettingsScreen extends StatefulWidget {
-  const DeviceSettingsScreen({super.key});
+  final String deviceId;
+  const DeviceSettingsScreen({super.key, required this.deviceId});
   @override
   State<DeviceSettingsScreen> createState() => _DeviceSettingsScreenState();
 }
@@ -26,14 +28,16 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
   DeviceConfig? _c;
   bool _saving = false;
   final _morse = TextEditingController();
+  final _name = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    context.read<AppState>().loadDeviceConfig().then((c) {
+    context.read<AppState>().api.getDeviceConfig(widget.deviceId).then((c) {
       setState(() {
         _c = c;
         _morse.text = c.ledMorse;
+        _name.text = c.name ?? '';
       });
     });
   }
@@ -41,12 +45,13 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
   @override
   void dispose() {
     _morse.dispose();
+    _name.dispose();
     super.dispose();
   }
 
   Future<void> _save(Map<String, dynamic> patch) async {
     setState(() => _saving = true);
-    final c = await context.read<AppState>().saveDeviceConfig(patch);
+    final c = await context.read<AppState>().api.updateDeviceConfig(widget.deviceId, patch);
     if (mounted) setState(() { _c = c; _saving = false; });
   }
 
@@ -55,7 +60,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
     final c = _c;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('设备设置'),
+        title: Text(c?.name?.isNotEmpty == true ? c!.name! : widget.deviceId),
         bottom: _saving ? const PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(minHeight: 2)) : null,
       ),
       body: c == null
@@ -63,6 +68,28 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                Text('设备名称', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _name,
+                      maxLength: 40,
+                      decoration: InputDecoration(
+                        hintText: widget.deviceId,
+                        border: const OutlineInputBorder(),
+                        isDense: true,
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  FilledButton(
+                    onPressed: () => _save({'name': _name.text.trim()}),
+                    child: const Text('保存'),
+                  ),
+                ]),
+                const Divider(height: 32),
                 Text('指示灯（无蜂鸣器）', style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
@@ -109,7 +136,7 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                   onChanged: (v) => v == null ? null : _save({'power_mode': v}),
                 ),
                 const SizedBox(height: 12),
-                Text('改动会通过下行命令在设备下次上报时下发。',
+                const Text('改动会通过下行命令在设备下次上报时下发。',
                     style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),

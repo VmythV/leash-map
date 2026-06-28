@@ -267,6 +267,7 @@ class ActivitySummary {
 
 class DeviceInfo {
   final String deviceId;
+  final String? name;
   final String boundAt;
   final bool primary;
   final bool online;
@@ -276,6 +277,7 @@ class DeviceInfo {
 
   DeviceInfo({
     required this.deviceId,
+    this.name,
     required this.boundAt,
     required this.primary,
     required this.online,
@@ -286,6 +288,7 @@ class DeviceInfo {
 
   factory DeviceInfo.fromJson(Map<String, dynamic> j) => DeviceInfo(
         deviceId: j['device_id'] as String,
+        name: j['name'] as String?,
         boundAt: j['bound_at'] as String? ?? '',
         primary: j['primary'] as bool? ?? false,
         online: j['online'] as bool? ?? false,
@@ -297,6 +300,7 @@ class DeviceInfo {
 
 class DeviceConfig {
   final String deviceId;
+  final String? name;
   final String ledPattern; // off/solid/blink/morse
   final String ledMorse;
   final int? reportIntervalS;
@@ -304,6 +308,7 @@ class DeviceConfig {
 
   DeviceConfig({
     required this.deviceId,
+    this.name,
     required this.ledPattern,
     required this.ledMorse,
     this.reportIntervalS,
@@ -312,6 +317,7 @@ class DeviceConfig {
 
   factory DeviceConfig.fromJson(Map<String, dynamic> j) => DeviceConfig(
         deviceId: j['device_id'] as String,
+        name: j['name'] as String?,
         ledPattern: j['led_pattern'] as String? ?? 'blink',
         ledMorse: j['led_morse'] as String? ?? 'SOS',
         reportIntervalS: _toIntN(j['report_interval_s']),

@@ -5,6 +5,7 @@ import '../app_state.dart';
 import '../models.dart';
 import '../util.dart';
 import 'bind_screen.dart';
+import 'device_settings_screen.dart';
 
 class DevicesScreen extends StatefulWidget {
   const DevicesScreen({super.key});
@@ -64,9 +65,14 @@ class _DevicesScreenState extends State<DevicesScreen> {
                   children: devices
                       .map((d) => Card(
                             child: ListTile(
+                              onTap: () async {
+                                await Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) => DeviceSettingsScreen(deviceId: d.deviceId)));
+                                await _reload();
+                              },
                               leading: Icon(Icons.sensors, color: d.online ? Colors.green : Colors.grey),
                               title: Row(children: [
-                                Text(d.deviceId),
+                                Text(d.name?.isNotEmpty == true ? d.name! : d.deviceId),
                                 if (d.primary)
                                   const Padding(
                                     padding: EdgeInsets.only(left: 8),
