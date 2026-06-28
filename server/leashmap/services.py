@@ -14,7 +14,28 @@ from .geo import haversine_m
 from .metrics import metrics
 from .notifications import notifier
 from .schemas import LocationPoint
-from .store import AlertRecord, LocationRecord, Store, to_iso, utcnow
+from .store import AlertRecord, LocationRecord, PetSettingsRecord, Store, to_iso, utcnow
+
+
+def _hour_in_window(hour: int, start: Optional[int], end: Optional[int]) -> bool:
+    """True if `hour` falls in [start, end) (UTC), handling overnight wrap."""
+    if start is None or end is None:
+        return False
+    if start == end:
+        return False
+    if start < end:
+        return start <= hour < end
+    return hour >= start or hour < end  # overnight
+
+
+def _in_quiet_hours(st: PetSettingsRecord, now: datetime) -> bool:
+    return _hour_in_window(now.hour, st.quiet_start, st.quiet_end)
+
+
+def _within_active_window(start: Optional[int], end: Optional[int], now: datetime) -> bool:
+    if start is None or end is None:
+        return True
+    return _hour_in_window(now.hour, start, end)
 
 
 def _app_location_payload(rec: LocationRecord) -> dict:
@@ -41,11 +62,14 @@ def _create_alert(
     severity: str,
     message: str,
     location_point_id: Optional[int],
+    deliver: bool = True,
 ) -> AlertRecord:
     alert = store.create_alert(
         user_id=user_id, pet_id=pet_id, device_id=device_id, type_=type_,
         severity=severity, message=message, location_point_id=location_point_id,
     )
+    # Always pushed to the App in real time; quiet hours only suppress
+    # out-of-band delivery (push/SMS).
     broker.publish(user_id, "alert.created", {
         "alert_id": alert.id,
         "pet_id": pet_id,
@@ -57,54 +81,62 @@ def _create_alert(
         "created_at": to_iso(alert.created_at),
         "location_point_id": location_point_id,
     })
-    # out-of-band channels (records a delivery status per channel)
-    notifier.dispatch(store, alert)
+    notifier.dispatch(store, alert, deliver=deliver)
     metrics.inc("alerts_created")
     metrics.inc(f"alerts_created_{type_}")
     return alert
 
 
-def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id: str, pet_name: str) -> None:
-    accurate = rec.accuracy_m <= settings.geofence_accuracy_threshold_m
+def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id: str,
+                    pet_name: str, st: PetSettingsRecord) -> None:
+    if rec.accuracy_m > settings.geofence_accuracy_threshold_m:
+        return  # ignore low-accuracy points for geofencing (avoid false alarms)
+    now = utcnow()
+    quiet = _in_quiet_hours(st, now)
     for gf in store.geofences_for_pet(rec.pet_id):
-        if not gf.enabled:
+        if not gf.enabled or not _within_active_window(gf.active_start, gf.active_end, now):
             continue
-        dist = haversine_m(rec.lat, rec.lng, gf.center_lat, gf.center_lng)
-        outside = dist > gf.radius_m
-        consecutive = gf.consecutive_outside
-        open_alert_id = gf.open_alert_id
+        inside = haversine_m(rec.lat, rec.lng, gf.center_lat, gf.center_lng) <= gf.radius_m
 
-        if outside and accurate:
-            consecutive += 1
-            if consecutive >= settings.geofence_exit_consecutive and open_alert_id is None:
+        if inside:
+            # entering from outside -> home alert
+            if gf.last_inside is False and gf.alert_on_enter and st.enter_enabled:
+                _create_alert(
+                    store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
+                    type_="enter_zone", severity="info",
+                    message=f"{pet_name} 已回到安全区域「{gf.name}」",
+                    location_point_id=rec.id, deliver=not quiet,
+                )
+            if gf.open_alert_id:
+                store.set_alert_status(gf.open_alert_id, "resolved")
+            store.update_geofence_state(gf.id, 0, None, last_inside=True)
+        else:
+            consecutive = gf.consecutive_outside + 1
+            open_alert_id = gf.open_alert_id
+            if (consecutive >= settings.geofence_exit_consecutive and open_alert_id is None
+                    and gf.alert_on_exit and st.exit_enabled):
                 alert = _create_alert(
-                    store, broker,
-                    user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
+                    store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
                     type_="exit_zone", severity="warning",
                     message=f"{pet_name} 可能离开了安全区域「{gf.name}」",
-                    location_point_id=rec.id,
+                    location_point_id=rec.id, deliver=not quiet,
                 )
                 open_alert_id = alert.id
-            store.update_geofence_state(gf.id, consecutive, open_alert_id)
-        elif not outside:
-            if open_alert_id:
-                store.set_alert_status(open_alert_id, "resolved")
-            store.update_geofence_state(gf.id, 0, None)
-        # outside but inaccurate: leave debounce state unchanged (avoid false alarms)
+            store.update_geofence_state(gf.id, consecutive, open_alert_id, last_inside=False)
 
 
-def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: str, pet_name: str) -> None:
-    if rec.battery_pct is None:
+def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: str,
+                  pet_name: str, st: PetSettingsRecord) -> None:
+    if rec.battery_pct is None or not st.low_battery_enabled:
         return
-    threshold = settings.low_battery_threshold
+    threshold = st.low_battery_threshold if st.low_battery_threshold is not None else settings.low_battery_threshold
     existing = store.open_alert(rec.pet_id, "low_battery")
     if rec.battery_pct <= threshold and existing is None:
         _create_alert(
-            store, broker,
-            user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
+            store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
             type_="low_battery", severity="warning",
             message=f"{pet_name} 的设备电量低（{rec.battery_pct}%），请尽快充电",
-            location_point_id=rec.id,
+            location_point_id=rec.id, deliver=not _in_quiet_hours(st, utcnow()),
         )
     elif rec.battery_pct > threshold and existing is not None:
         store.set_alert_status(existing.id, "resolved")
@@ -145,6 +177,7 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
 
     if pet_id:
         pet = store.get_pet(pet_id)
+        settings_rec = store.get_pet_settings(pet_id)
         payload = {"pet_id": pet_id, "device_id": device_id}
         payload.update(_app_location_payload(rec))
         broker.publish(pet.owner_id, "location.updated", payload)
@@ -155,8 +188,8 @@ def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoi
             "charging": False,
             "ts": to_iso(rec.dt),
         })
-        _eval_geofences(store, broker, rec, pet.owner_id, pet.name)
-        _eval_battery(store, broker, rec, pet.owner_id, pet.name)
+        _eval_geofences(store, broker, rec, pet.owner_id, pet.name, settings_rec)
+        _eval_battery(store, broker, rec, pet.owner_id, pet.name, settings_rec)
 
     return "accepted"
 
@@ -177,6 +210,9 @@ def scan_offline(store: Store, broker: Broker, now: Optional[datetime] = None) -
         pet = store.get_pet(pet_id)
         if pet is None:
             continue
+        prefs = store.get_pet_settings(pet_id)
+        if not prefs.offline_enabled:
+            continue
         offline = st.last_seen is None or (now - st.last_seen) > threshold
         existing = store.open_alert(pet_id, "offline")
         if offline and existing is None:
@@ -187,6 +223,7 @@ def scan_offline(store: Store, broker: Broker, now: Optional[datetime] = None) -
                 message=f"{pet.name} 的设备已离线，最后在线时间 "
                         f"{to_iso(st.last_seen) if st.last_seen else '未知'}",
                 location_point_id=None,
+                deliver=not _in_quiet_hours(prefs, now),
             )
             created += 1
         elif not offline and existing is not None:

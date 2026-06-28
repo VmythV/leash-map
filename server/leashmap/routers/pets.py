@@ -9,7 +9,15 @@ from pydantic import BaseModel
 
 from ..deps import app_auth, get_store
 from ..errors import APIError
-from ..schemas import BindRequest, DeviceBinding, Pet, PetCreate, User
+from ..schemas import (
+    AlertSettings,
+    AlertSettingsUpdate,
+    BindRequest,
+    DeviceBinding,
+    Pet,
+    PetCreate,
+    User,
+)
 from ..store import to_iso
 from ..web import owned_pet
 
@@ -55,6 +63,39 @@ def bind_device(body: BindRequest, user: User = Depends(app_auth), store=Depends
         pet_id=body.pet_id,
         bound_at=to_iso(bound_at),
     )
+
+
+def _to_settings(rec) -> AlertSettings:
+    return AlertSettings(
+        pet_id=rec.pet_id,
+        exit_enabled=rec.exit_enabled,
+        enter_enabled=rec.enter_enabled,
+        low_battery_enabled=rec.low_battery_enabled,
+        offline_enabled=rec.offline_enabled,
+        low_battery_threshold=rec.low_battery_threshold,
+        quiet_start=rec.quiet_start,
+        quiet_end=rec.quiet_end,
+        tracking_paused=rec.tracking_paused,
+        retention_days=rec.retention_days,
+    )
+
+
+@router.get("/pets/{pet_id}/alert-settings", response_model=AlertSettings)
+def get_alert_settings(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_pet(store, user, pet_id)
+    return _to_settings(store.get_pet_settings(pet_id))
+
+
+@router.put("/pets/{pet_id}/alert-settings", response_model=AlertSettings)
+def update_alert_settings(
+    pet_id: str,
+    body: AlertSettingsUpdate,
+    user: User = Depends(app_auth),
+    store=Depends(get_store),
+):
+    owned_pet(store, user, pet_id)
+    fields = {k: v for k, v in body.model_dump().items() if v is not None}
+    return _to_settings(store.update_pet_settings(pet_id, **fields))
 
 
 class LostModeRequest(BaseModel):

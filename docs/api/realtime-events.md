@@ -52,9 +52,13 @@ data: {"pet_id":"pet_2b7d4f10a6c1","device_id":"dev_mvp_001","ts":"2026-06-27T08
 }
 ```
 
-`type` ∈ `exit_zone` / `low_battery` / `offline`；
+`type` ∈ `exit_zone` / `enter_zone`（回家）/ `low_battery` / `offline`；
 `severity` ∈ `info` / `warning` / `critical`；
 `status` ∈ `open` / `acknowledged` / `resolved`。
+
+> 告警是否生成由每宠物开关（`GET/PUT /v1/pets/{id}/alert-settings`）与每围栏
+> `alert_on_exit` / `alert_on_enter` 决定。勿扰时段只抑制站外推送投递，
+> `alert.created` 仍会经 SSE 实时下发（站内可见）。
 
 ## 4. 围栏离区防误报（影响 alert.created 时机）
 

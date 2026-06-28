@@ -319,6 +319,33 @@ paths:
               schema: { $ref: "#/components/schemas/Geofence" }
         "400": { $ref: "#/components/responses/BadRequest" }
 
+  /v1/pets/{petId}/alert-settings:
+    get:
+      tags: [pets]
+      summary: Get per-pet alert preferences
+      parameters: [{ $ref: "#/components/parameters/petId" }]
+      responses:
+        "200":
+          description: settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertSettings" }
+    put:
+      tags: [pets]
+      summary: Update per-pet alert preferences (partial)
+      parameters: [{ $ref: "#/components/parameters/petId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertSettings" }
+      responses:
+        "200":
+          description: updated settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlertSettings" }
+
   # ---------------- App: alerts ----------------
   /v1/alerts:
     get:
@@ -635,6 +662,8 @@ components:
         center_lng: { type: number, example: 121.4737 }
         radius_m: { type: number, minimum: 20, example: 150 }
         enabled: { type: boolean, default: true }
+        alert_on_exit: { type: boolean, default: true }
+        alert_on_enter: { type: boolean, default: false }
 
     Geofence:
       allOf:
@@ -643,6 +672,22 @@ components:
           properties:
             id: { type: string, example: "geo_5c1e9a3b7f02" }
             pet_id: { type: string }
+            active_start: { type: [integer, "null"], minimum: 0, maximum: 23 }
+            active_end: { type: [integer, "null"], minimum: 0, maximum: 23 }
+
+    AlertSettings:
+      type: object
+      properties:
+        pet_id: { type: string }
+        exit_enabled: { type: boolean }
+        enter_enabled: { type: boolean }
+        low_battery_enabled: { type: boolean }
+        offline_enabled: { type: boolean }
+        low_battery_threshold: { type: [integer, "null"] }
+        quiet_start: { type: [integer, "null"], minimum: 0, maximum: 23 }
+        quiet_end: { type: [integer, "null"], minimum: 0, maximum: 23 }
+        tracking_paused: { type: boolean }
+        retention_days: { type: integer }
 
     Alert:
       type: object
@@ -650,7 +695,7 @@ components:
         id: { type: string, example: "alt_91b0c7d3e84a" }
         pet_id: { type: string }
         device_id: { type: string }
-        type: { type: string, enum: [exit_zone, low_battery, offline] }
+        type: { type: string, enum: [exit_zone, enter_zone, low_battery, offline] }
         severity: { type: string, enum: [info, warning, critical] }
         status: { type: string, enum: [open, acknowledged, resolved] }
         message: { type: string }

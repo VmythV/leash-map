@@ -75,9 +75,29 @@ class GeofenceRow(Base):
     center_lng: Mapped[float] = mapped_column()
     radius_m: Mapped[float] = mapped_column()
     enabled: Mapped[bool] = mapped_column(default=True)
-    # runtime debounce state (kept alongside the fence row for MVP simplicity)
+    alert_on_exit: Mapped[bool] = mapped_column(default=True)
+    alert_on_enter: Mapped[bool] = mapped_column(default=False)
+    # Active time window (local hours); null = always active. (batch 3)
+    active_start: Mapped[Optional[int]] = mapped_column(nullable=True)
+    active_end: Mapped[Optional[int]] = mapped_column(nullable=True)
+    # runtime state (kept alongside the fence row for MVP simplicity)
     consecutive_outside: Mapped[int] = mapped_column(default=0)
     open_alert_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    last_inside: Mapped[Optional[bool]] = mapped_column(nullable=True)
+
+
+class PetSettingsRow(Base):
+    __tablename__ = "pet_settings"
+    pet_id: Mapped[str] = mapped_column(String, primary_key=True)
+    exit_enabled: Mapped[bool] = mapped_column(default=True)
+    enter_enabled: Mapped[bool] = mapped_column(default=False)
+    low_battery_enabled: Mapped[bool] = mapped_column(default=True)
+    offline_enabled: Mapped[bool] = mapped_column(default=True)
+    low_battery_threshold: Mapped[Optional[int]] = mapped_column(nullable=True)
+    quiet_start: Mapped[Optional[int]] = mapped_column(nullable=True)  # local hour
+    quiet_end: Mapped[Optional[int]] = mapped_column(nullable=True)
+    tracking_paused: Mapped[bool] = mapped_column(default=False)  # batch 3
+    retention_days: Mapped[int] = mapped_column(default=30)  # batch 3
 
 
 class AlertRow(Base):

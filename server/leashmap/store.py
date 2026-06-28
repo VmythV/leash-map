@@ -23,6 +23,7 @@ from .db import (
     LocationRow,
     NotificationDeliveryRow,
     PetRow,
+    PetSettingsRow,
     SessionRow,
     UserRow,
 )
@@ -72,8 +73,27 @@ class GeofenceRecord:
     center_lng: float
     radius_m: float
     enabled: bool
+    alert_on_exit: bool = True
+    alert_on_enter: bool = False
+    active_start: Optional[int] = None
+    active_end: Optional[int] = None
     consecutive_outside: int = 0
     open_alert_id: Optional[str] = None
+    last_inside: Optional[bool] = None
+
+
+@dataclass
+class PetSettingsRecord:
+    pet_id: str
+    exit_enabled: bool = True
+    enter_enabled: bool = False
+    low_battery_enabled: bool = True
+    offline_enabled: bool = True
+    low_battery_threshold: Optional[int] = None
+    quiet_start: Optional[int] = None
+    quiet_end: Optional[int] = None
+    tracking_paused: bool = False
+    retention_days: int = 30
 
 
 @dataclass
@@ -122,7 +142,20 @@ def _gf(r: GeofenceRow) -> GeofenceRecord:
     return GeofenceRecord(
         id=r.id, pet_id=r.pet_id, name=r.name, center_lat=r.center_lat,
         center_lng=r.center_lng, radius_m=r.radius_m, enabled=r.enabled,
+        alert_on_exit=r.alert_on_exit, alert_on_enter=r.alert_on_enter,
+        active_start=r.active_start, active_end=r.active_end,
         consecutive_outside=r.consecutive_outside, open_alert_id=r.open_alert_id,
+        last_inside=r.last_inside,
+    )
+
+
+def _settings(r: PetSettingsRow) -> PetSettingsRecord:
+    return PetSettingsRecord(
+        pet_id=r.pet_id, exit_enabled=r.exit_enabled, enter_enabled=r.enter_enabled,
+        low_battery_enabled=r.low_battery_enabled, offline_enabled=r.offline_enabled,
+        low_battery_threshold=r.low_battery_threshold,
+        quiet_start=r.quiet_start, quiet_end=r.quiet_end,
+        tracking_paused=r.tracking_paused, retention_days=r.retention_days,
     )
 
 
@@ -281,28 +314,62 @@ class Store:
 
     # ---- geofences ----
     def create_geofence(self, pet_id: str, name: str, center_lat: float, center_lng: float,
-                        radius_m: float, enabled: bool) -> GeofenceRecord:
+                        radius_m: float, enabled: bool, alert_on_exit: bool = True,
+                        alert_on_enter: bool = False) -> GeofenceRecord:
         gid = gen_id("geo")
         with db.SessionLocal() as s:
             s.add(GeofenceRow(
                 id=gid, pet_id=pet_id, name=name, center_lat=center_lat, center_lng=center_lng,
-                radius_m=radius_m, enabled=enabled, consecutive_outside=0, open_alert_id=None,
+                radius_m=radius_m, enabled=enabled, alert_on_exit=alert_on_exit,
+                alert_on_enter=alert_on_enter, consecutive_outside=0, open_alert_id=None,
             ))
             s.commit()
-        return GeofenceRecord(gid, pet_id, name, center_lat, center_lng, radius_m, enabled)
+        return GeofenceRecord(gid, pet_id, name, center_lat, center_lng, radius_m, enabled,
+                              alert_on_exit=alert_on_exit, alert_on_enter=alert_on_enter)
 
     def geofences_for_pet(self, pet_id: str) -> List[GeofenceRecord]:
         with db.SessionLocal() as s:
             rows = s.scalars(select(GeofenceRow).where(GeofenceRow.pet_id == pet_id)).all()
             return [_gf(r) for r in rows]
 
-    def update_geofence_state(self, geo_id: str, consecutive_outside: int, open_alert_id: Optional[str]) -> None:
+    def update_geofence(self, geo_id: str, **fields) -> Optional[GeofenceRecord]:
+        with db.SessionLocal() as s:
+            row = s.get(GeofenceRow, geo_id)
+            if row is None:
+                return None
+            for k, v in fields.items():
+                setattr(row, k, v)
+            s.commit()
+            return _gf(row)
+
+    def update_geofence_state(self, geo_id: str, consecutive_outside: int,
+                              open_alert_id: Optional[str], last_inside: Optional[bool] = None) -> None:
         with db.SessionLocal() as s:
             row = s.get(GeofenceRow, geo_id)
             if row:
                 row.consecutive_outside = consecutive_outside
                 row.open_alert_id = open_alert_id
+                if last_inside is not None:
+                    row.last_inside = last_inside
                 s.commit()
+
+    # ---- pet settings ----
+    def get_pet_settings(self, pet_id: str) -> PetSettingsRecord:
+        with db.SessionLocal() as s:
+            r = s.get(PetSettingsRow, pet_id)
+            return _settings(r) if r else PetSettingsRecord(pet_id=pet_id)
+
+    def update_pet_settings(self, pet_id: str, **fields) -> PetSettingsRecord:
+        with db.SessionLocal() as s:
+            row = s.get(PetSettingsRow, pet_id)
+            if row is None:
+                row = PetSettingsRow(pet_id=pet_id)
+                s.add(row)
+            for k, v in fields.items():
+                if v is not None:
+                    setattr(row, k, v)
+            s.commit()
+            return _settings(row)
 
     # ---- alerts ----
     def create_alert(self, *, user_id: str, pet_id: str, device_id: Optional[str], type_: str,

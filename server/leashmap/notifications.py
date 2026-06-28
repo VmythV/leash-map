@@ -37,7 +37,12 @@ class NotificationService:
     def __init__(self, providers: List[NotificationProvider] | None = None) -> None:
         self.providers: List[NotificationProvider] = providers or [ConsoleProvider()]
 
-    def dispatch(self, store: Store, alert: AlertRecord) -> None:
+    def dispatch(self, store: Store, alert: AlertRecord, deliver: bool = True) -> None:
+        if not deliver:
+            # quiet hours: the alert still exists in-app, but no out-of-band push
+            for p in self.providers:
+                store.record_delivery(alert.id, alert.user_id, p.name, "suppressed")
+            return
         for p in self.providers:
             try:
                 ok = p.send(alert)

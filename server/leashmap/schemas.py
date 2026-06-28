@@ -38,6 +38,7 @@ class Species(str, Enum):
 
 class AlertType(str, Enum):
     exit_zone = "exit_zone"
+    enter_zone = "enter_zone"
     low_battery = "low_battery"
     offline = "offline"
 
@@ -223,11 +224,50 @@ class GeofenceCreate(BaseModel):
     center_lng: float = Field(ge=-180, le=180)
     radius_m: float = Field(ge=20)
     enabled: bool = True
+    alert_on_exit: bool = True
+    alert_on_enter: bool = False
 
 
 class Geofence(GeofenceCreate):
     id: str
     pet_id: str
+    active_start: Optional[int] = None
+    active_end: Optional[int] = None
+
+
+class GeofenceUpdate(BaseModel):
+    name: Optional[str] = None
+    radius_m: Optional[float] = Field(default=None, ge=20)
+    enabled: Optional[bool] = None
+    alert_on_exit: Optional[bool] = None
+    alert_on_enter: Optional[bool] = None
+    active_start: Optional[int] = Field(default=None, ge=0, le=23)
+    active_end: Optional[int] = Field(default=None, ge=0, le=23)
+
+
+class AlertSettings(BaseModel):
+    pet_id: str
+    exit_enabled: bool
+    enter_enabled: bool
+    low_battery_enabled: bool
+    offline_enabled: bool
+    low_battery_threshold: Optional[int] = None
+    quiet_start: Optional[int] = None
+    quiet_end: Optional[int] = None
+    tracking_paused: bool = False
+    retention_days: int = 30
+
+
+class AlertSettingsUpdate(BaseModel):
+    exit_enabled: Optional[bool] = None
+    enter_enabled: Optional[bool] = None
+    low_battery_enabled: Optional[bool] = None
+    offline_enabled: Optional[bool] = None
+    low_battery_threshold: Optional[int] = Field(default=None, ge=1, le=100)
+    quiet_start: Optional[int] = Field(default=None, ge=0, le=23)
+    quiet_end: Optional[int] = Field(default=None, ge=0, le=23)
+    tracking_paused: Optional[bool] = None
+    retention_days: Optional[int] = Field(default=None, ge=1, le=3650)
 
 
 # ---------------- App: alerts ----------------
