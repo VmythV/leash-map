@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "lm_led.h"
+
 typedef struct {
     uint32_t tracking_interval_s;     /* normal activity */
     uint32_t guard_interval_s;        /* near/at geofence boundary */
@@ -13,8 +15,10 @@ typedef struct {
     uint32_t heartbeat_interval_s;    /* idle low-power heartbeat */
     uint32_t low_battery_interval_s;  /* reduced frequency when low */
     uint8_t  low_battery_threshold;   /* percent */
-    bool     buzzer_enabled;
-    bool     led_enabled;
+    /* No buzzer. LED only. */
+    bool             led_enabled;
+    lm_led_pattern_t led_pattern;
+    char             led_morse[LM_LED_MSG_MAX]; /* default "SOS" */
 } lm_config_t;
 
 /* Sensible MVP defaults. */

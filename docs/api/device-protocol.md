@@ -176,6 +176,7 @@ MVP 用 **搭车下发**：命令放进上行（多为 heartbeat）的响应 `co
 | --- | --- | --- |
 | `set_mode` | `{ "mode": "lost" }` | 切换工作模式（寻宠模式由此触发） |
 | `set_interval` | `{ "seconds": 30 }` | 调整上报间隔 |
+| `set_config` | `{ "led_pattern": "morse", "led_morse": "SOS", "report_interval_s": 120 }` | 设备配置：LED 模式/摩斯消息/上报间隔（无蜂鸣器） |
 | `locate_now` | `{}` | 立即定位一次 |
 | `ota` | `{ "version": "0.2.0", "url": "..." }` | OTA 升级（MVP 仅占位） |
 

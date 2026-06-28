@@ -26,7 +26,14 @@ void test_cache_partial_drain(void);
 /* command parsing */
 void test_parse_set_mode(void);
 void test_parse_set_interval(void);
+void test_parse_set_config(void);
 void test_parse_missing_returns_false(void);
+/* led */
+void test_led_pattern_names(void);
+void test_led_off_solid(void);
+void test_led_blink(void);
+void test_led_morse_sos(void);
+void test_morse_table(void);
 /* app orchestrator */
 void test_app_tracking_publishes(void);
 void test_app_no_fix_skips(void);
@@ -60,7 +67,14 @@ int main(void) {
 
     LM_RUN(test_parse_set_mode);
     LM_RUN(test_parse_set_interval);
+    LM_RUN(test_parse_set_config);
     LM_RUN(test_parse_missing_returns_false);
+
+    LM_RUN(test_led_pattern_names);
+    LM_RUN(test_led_off_solid);
+    LM_RUN(test_led_blink);
+    LM_RUN(test_led_morse_sos);
+    LM_RUN(test_morse_table);
 
     LM_RUN(test_app_tracking_publishes);
     LM_RUN(test_app_no_fix_skips);

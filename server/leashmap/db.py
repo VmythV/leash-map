@@ -142,6 +142,15 @@ class NotificationDeliveryRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime)
 
 
+class DeviceConfigRow(Base):
+    __tablename__ = "device_config"
+    device_id: Mapped[str] = mapped_column(String, primary_key=True)
+    led_pattern: Mapped[str] = mapped_column(String, default="blink")  # off/solid/blink/morse
+    led_morse: Mapped[str] = mapped_column(String, default="SOS")
+    report_interval_s: Mapped[Optional[int]] = mapped_column(nullable=True)
+    power_mode: Mapped[str] = mapped_column(String, default="normal")  # normal/saver/high_accuracy
+
+
 class CommandRow(Base):
     __tablename__ = "commands"
     command_id: Mapped[str] = mapped_column(String, primary_key=True)

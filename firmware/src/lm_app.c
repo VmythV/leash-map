@@ -32,6 +32,17 @@ void lm_app_apply_command(lm_app_t *app, const lm_command_t *cmd) {
                 app->cfg.tracking_interval_s = cmd->interval_s;
             }
             break;
+        case LM_CMD_SET_CONFIG:
+            if (cmd->led_pattern[0]) {
+                app->cfg.led_pattern = lm_led_pattern_from_name(cmd->led_pattern);
+            }
+            if (cmd->led_morse[0]) {
+                snprintf(app->cfg.led_morse, sizeof app->cfg.led_morse, "%s", cmd->led_morse);
+            }
+            if (cmd->interval_s > 0) {
+                app->cfg.tracking_interval_s = cmd->interval_s;
+            }
+            break;
         case LM_CMD_LOCATE_NOW:
         case LM_CMD_OTA:
         case LM_CMD_NONE:

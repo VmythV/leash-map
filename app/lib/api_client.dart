@@ -89,6 +89,17 @@ class ApiClient {
     return ActivitySummary.fromJson(_json(r) as Map<String, dynamic>);
   }
 
+  Future<DeviceConfig> getDeviceConfig(String deviceId) async {
+    final r = await http.get(_u('/v1/devices/$deviceId/config'), headers: _headers);
+    return DeviceConfig.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
+  Future<DeviceConfig> updateDeviceConfig(String deviceId, Map<String, dynamic> patch) async {
+    final r = await http.put(_u('/v1/devices/$deviceId/config'),
+        headers: _headers, body: jsonEncode(patch));
+    return DeviceConfig.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
   Future<AlertSettings> getAlertSettings(String petId) async {
     final r = await http.get(_u('/v1/pets/$petId/alert-settings'), headers: _headers);
     return AlertSettings.fromJson(_json(r) as Map<String, dynamic>);

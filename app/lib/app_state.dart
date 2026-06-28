@@ -172,6 +172,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<DeviceConfig> loadDeviceConfig() => api.getDeviceConfig(deviceId!);
+
+  Future<DeviceConfig> saveDeviceConfig(Map<String, dynamic> patch) =>
+      api.updateDeviceConfig(deviceId!, patch);
+
   Future<AlertSettings> loadAlertSettings() => api.getAlertSettings(pet!.id);
 
   Future<AlertSettings> saveAlertSettings(Map<String, dynamic> patch) =>

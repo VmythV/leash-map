@@ -10,6 +10,7 @@ import 'activity_screen.dart';
 import 'alert_settings_screen.dart';
 import 'alerts_screen.dart';
 import 'bind_screen.dart';
+import 'device_settings_screen.dart';
 import 'safezone_screen.dart';
 import 'trail_screen.dart';
 
@@ -69,6 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(s.pet?.name ?? 'LeashMap'),
         actions: [
+          IconButton(
+            tooltip: '设备设置',
+            icon: const Icon(Icons.settings_remote),
+            onPressed: () => _go(const DeviceSettingsScreen()),
+          ),
           IconButton(
             tooltip: '提醒设置',
             icon: const Icon(Icons.tune),

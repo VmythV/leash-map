@@ -21,6 +21,14 @@ def owned_pet(store: Store, user: User, pet_id: str) -> PetRecord:
     return pet
 
 
+def owned_device(store: Store, user: User, device_id: str) -> PetRecord:
+    """Resolve a device to its bound pet and verify the user owns it."""
+    pet_id = store.pet_for_device(device_id)
+    if pet_id is None:
+        raise APIError("not_found", "Device is not bound")
+    return owned_pet(store, user, pet_id)
+
+
 def to_app_location(rec: LocationRecord) -> AppLocation:
     return AppLocation(
         ts=to_iso(rec.dt),

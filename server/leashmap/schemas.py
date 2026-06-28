@@ -163,6 +163,34 @@ class DeviceBinding(BaseModel):
     bound_at: str
 
 
+class LedPattern(str, Enum):
+    off = "off"
+    solid = "solid"
+    blink = "blink"
+    morse = "morse"
+
+
+class PowerMode(str, Enum):
+    normal = "normal"
+    saver = "saver"
+    high_accuracy = "high_accuracy"
+
+
+class DeviceConfig(BaseModel):
+    device_id: str
+    led_pattern: LedPattern
+    led_morse: str
+    report_interval_s: Optional[int] = None
+    power_mode: PowerMode
+
+
+class DeviceConfigUpdate(BaseModel):
+    led_pattern: Optional[LedPattern] = None
+    led_morse: Optional[str] = Field(default=None, max_length=15)
+    report_interval_s: Optional[int] = Field(default=None, ge=5, le=3600)
+    power_mode: Optional[PowerMode] = None
+
+
 # ---------------- App: location ----------------
 class AppLocation(BaseModel):
     ts: str

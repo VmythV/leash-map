@@ -108,6 +108,12 @@ bool lm_protocol_parse_command(const char *json, lm_command_t *cmd) {
         cmd->type = LM_CMD_SET_INTERVAL;
         unsigned long long s = 0;
         if (find_uint(json, "seconds", &s)) cmd->interval_s = (uint32_t)s;
+    } else if (strcmp(type, "set_config") == 0) {
+        cmd->type = LM_CMD_SET_CONFIG;
+        find_str(json, "led_pattern", cmd->led_pattern, sizeof cmd->led_pattern);
+        find_str(json, "led_morse", cmd->led_morse, sizeof cmd->led_morse);
+        unsigned long long s = 0;
+        if (find_uint(json, "report_interval_s", &s)) cmd->interval_s = (uint32_t)s;
     } else if (strcmp(type, "locate_now") == 0) {
         cmd->type = LM_CMD_LOCATE_NOW;
     } else if (strcmp(type, "ota") == 0) {

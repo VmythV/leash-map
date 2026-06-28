@@ -1,6 +1,7 @@
 #include "lm_state.h"
 
 #include <stddef.h>
+#include <string.h>
 
 lm_config_t lm_config_default(void) {
     lm_config_t c;
@@ -10,8 +11,10 @@ lm_config_t lm_config_default(void) {
     c.heartbeat_interval_s = 1800;   /* 30 min idle heartbeat */
     c.low_battery_interval_s = 1800;
     c.low_battery_threshold = 15;
-    c.buzzer_enabled = true;
     c.led_enabled = true;
+    c.led_pattern = LM_LED_BLINK;
+    strncpy(c.led_morse, "SOS", sizeof c.led_morse);
+    c.led_morse[sizeof c.led_morse - 1] = '\0';
     return c;
 }
 

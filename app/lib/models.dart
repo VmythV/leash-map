@@ -253,6 +253,30 @@ class ActivitySummary {
       );
 }
 
+class DeviceConfig {
+  final String deviceId;
+  final String ledPattern; // off/solid/blink/morse
+  final String ledMorse;
+  final int? reportIntervalS;
+  final String powerMode; // normal/saver/high_accuracy
+
+  DeviceConfig({
+    required this.deviceId,
+    required this.ledPattern,
+    required this.ledMorse,
+    this.reportIntervalS,
+    required this.powerMode,
+  });
+
+  factory DeviceConfig.fromJson(Map<String, dynamic> j) => DeviceConfig(
+        deviceId: j['device_id'] as String,
+        ledPattern: j['led_pattern'] as String? ?? 'blink',
+        ledMorse: j['led_morse'] as String? ?? 'SOS',
+        reportIntervalS: _toIntN(j['report_interval_s']),
+        powerMode: j['power_mode'] as String? ?? 'normal',
+      );
+}
+
 class TrailData {
   final String petId;
   final int pointCount;

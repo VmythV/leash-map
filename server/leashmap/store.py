@@ -17,6 +17,7 @@ from .db import (
     AlertRow,
     BindingRow,
     CommandRow,
+    DeviceConfigRow,
     DeviceEventRow,
     DeviceStatusRow,
     GeofenceRow,
@@ -126,6 +127,15 @@ class PetRecord:
     name: str
     species: str
     device_id: Optional[str] = None
+
+
+@dataclass
+class DeviceConfigRecord:
+    device_id: str
+    led_pattern: str = "blink"
+    led_morse: str = "SOS"
+    report_interval_s: Optional[int] = None
+    power_mode: str = "normal"
 
 
 # ---------------- row -> DTO ----------------
@@ -458,6 +468,32 @@ class Store:
                 {"command_id": r.command_id, "type": r.type, "params": r.params, "expires_at": r.expires_at}
                 for r in rows
             ]
+
+    # ---- device config ----
+    def get_device_config(self, device_id: str) -> DeviceConfigRecord:
+        with db.SessionLocal() as s:
+            r = s.get(DeviceConfigRow, device_id)
+            if r is None:
+                return DeviceConfigRecord(device_id=device_id)
+            return DeviceConfigRecord(
+                device_id=r.device_id, led_pattern=r.led_pattern, led_morse=r.led_morse,
+                report_interval_s=r.report_interval_s, power_mode=r.power_mode,
+            )
+
+    def update_device_config(self, device_id: str, **fields) -> DeviceConfigRecord:
+        with db.SessionLocal() as s:
+            r = s.get(DeviceConfigRow, device_id)
+            if r is None:
+                r = DeviceConfigRow(device_id=device_id)
+                s.add(r)
+            for k, v in fields.items():
+                if v is not None:
+                    setattr(r, k, v)
+            s.commit()
+            return DeviceConfigRecord(
+                device_id=r.device_id, led_pattern=r.led_pattern, led_morse=r.led_morse,
+                report_interval_s=r.report_interval_s, power_mode=r.power_mode,
+            )
 
     def ack_command(self, command_id: str, status: str = "applied") -> bool:
         with db.SessionLocal() as s:

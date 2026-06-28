@@ -25,6 +25,18 @@ void test_parse_set_interval(void) {
     LM_CHECK(cmd.interval_s == 30);
 }
 
+void test_parse_set_config(void) {
+    const char *json =
+        "{\"command_id\":\"cmd_c\",\"type\":\"set_config\",\"params\":"
+        "{\"led_pattern\":\"morse\",\"led_morse\":\"SOS\",\"report_interval_s\":120}}";
+    lm_command_t cmd;
+    LM_CHECK(lm_protocol_parse_command(json, &cmd) == true);
+    LM_CHECK(cmd.type == LM_CMD_SET_CONFIG);
+    LM_CHECK_STR(cmd.led_pattern, "morse");
+    LM_CHECK_STR(cmd.led_morse, "SOS");
+    LM_CHECK(cmd.interval_s == 120);
+}
+
 void test_parse_missing_returns_false(void) {
     lm_command_t cmd;
     LM_CHECK(lm_protocol_parse_command("{\"type\":\"set_mode\"}", &cmd) == false);

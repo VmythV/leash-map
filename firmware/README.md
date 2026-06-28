@@ -32,12 +32,14 @@ include/
   lm_drivers.h    硬件驱动抽象（HAL vtable）：gnss/modem/imu/battery/clock/log
   lm_protocol.h   上行序列化 + command_ack + 命令解析
   lm_cache.h      离线缓存环形缓冲（定长，无堆）
+  lm_led.h        指示灯模式（熄灭/常亮/闪烁/摩斯码）—— 无蜂鸣器
   lm_ota.h        OTA 状态机（下载/校验/应用/回滚）+ 进度
   lm_app.h        应用编排器（基于 HAL 的纯逻辑）
 src/
   lm_state.c      状态转移 + 间隔策略 + 状态名/模式名映射
-  lm_protocol.c   snprintf JSON 序列化 + 极简命令解析（无 JSON 库）
+  lm_protocol.c   snprintf JSON 序列化 + 极简命令解析（含 set_config）
   lm_cache.c      环形缓冲：push 满则丢最旧、批量 drain
+  lm_led.c        LED：lm_led_on(elapsed) 纯函数 + 摩斯码编码表（默认 SOS）
   lm_ota.c        OTA 转移：校验失败丢弃、应用失败回滚 + 进度百分比
   lm_app.c        一次 tick：感知→采集→上报/缓存→重连补传→应用下行命令+ack
 tests/

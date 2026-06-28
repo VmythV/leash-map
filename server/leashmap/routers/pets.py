@@ -14,12 +14,14 @@ from ..schemas import (
     AlertSettingsUpdate,
     BindRequest,
     DeviceBinding,
+    DeviceConfig,
+    DeviceConfigUpdate,
     Pet,
     PetCreate,
     User,
 )
 from ..store import to_iso
-from ..web import owned_pet
+from ..web import owned_device, owned_pet
 
 router = APIRouter(prefix="/v1", tags=["pets"])
 
@@ -96,6 +98,43 @@ def update_alert_settings(
     owned_pet(store, user, pet_id)
     fields = {k: v for k, v in body.model_dump().items() if v is not None}
     return _to_settings(store.update_pet_settings(pet_id, **fields))
+
+
+def _to_device_config(rec) -> DeviceConfig:
+    return DeviceConfig(
+        device_id=rec.device_id,
+        led_pattern=rec.led_pattern,
+        led_morse=rec.led_morse,
+        report_interval_s=rec.report_interval_s,
+        power_mode=rec.power_mode,
+    )
+
+
+@router.get("/devices/{device_id}/config", response_model=DeviceConfig)
+def get_device_config(device_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_device(store, user, device_id)
+    return _to_device_config(store.get_device_config(device_id))
+
+
+@router.put("/devices/{device_id}/config", response_model=DeviceConfig)
+def update_device_config(
+    device_id: str,
+    body: DeviceConfigUpdate,
+    user: User = Depends(app_auth),
+    store=Depends(get_store),
+):
+    owned_device(store, user, device_id)
+    fields = {k: (v.value if hasattr(v, "value") else v)
+              for k, v in body.model_dump().items() if v is not None}
+    cfg = store.update_device_config(device_id, **fields)
+    # push the resulting config to the device via a set_config command
+    expires_at = int(time.time()) + 600
+    store.enqueue_command(device_id, "set_config", {
+        "led_pattern": cfg.led_pattern,
+        "led_morse": cfg.led_morse,
+        "report_interval_s": cfg.report_interval_s,
+    }, expires_at)
+    return _to_device_config(cfg)
 
 
 class LostModeRequest(BaseModel):
