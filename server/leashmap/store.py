@@ -135,6 +135,7 @@ class PetRecord:
 @dataclass
 class DeviceConfigRecord:
     device_id: str
+    name: Optional[str] = None
     led_pattern: str = "blink"
     led_morse: str = "SOS"
     report_interval_s: Optional[int] = None
@@ -483,11 +484,14 @@ class Store:
             s.commit()
         return rec
 
-    def open_alert(self, pet_id: str, type_: str) -> Optional[AlertRecord]:
+    def open_alert(self, pet_id: str, type_: str, device_id: Optional[str] = None) -> Optional[AlertRecord]:
         with db.SessionLocal() as s:
-            row = s.scalar(select(AlertRow).where(
+            q = select(AlertRow).where(
                 AlertRow.pet_id == pet_id, AlertRow.type == type_, AlertRow.status == "open",
-            ))
+            )
+            if device_id is not None:
+                q = q.where(AlertRow.device_id == device_id)
+            row = s.scalar(q)
             return _alert(row) if row else None
 
     def alerts_for_owner(self, owner_id: str, status: Optional[str] = None, limit: int = 50) -> List[AlertRecord]:
@@ -576,7 +580,7 @@ class Store:
             if r is None:
                 return DeviceConfigRecord(device_id=device_id)
             return DeviceConfigRecord(
-                device_id=r.device_id, led_pattern=r.led_pattern, led_morse=r.led_morse,
+                device_id=r.device_id, name=r.name, led_pattern=r.led_pattern, led_morse=r.led_morse,
                 report_interval_s=r.report_interval_s, power_mode=r.power_mode,
             )
 
@@ -591,7 +595,7 @@ class Store:
                     setattr(r, k, v)
             s.commit()
             return DeviceConfigRecord(
-                device_id=r.device_id, led_pattern=r.led_pattern, led_morse=r.led_morse,
+                device_id=r.device_id, name=r.name, led_pattern=r.led_pattern, led_morse=r.led_morse,
                 report_interval_s=r.report_interval_s, power_mode=r.power_mode,
             )
 

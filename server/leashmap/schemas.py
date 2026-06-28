@@ -170,6 +170,7 @@ class DeviceBinding(BaseModel):
 
 class DeviceInfo(BaseModel):
     device_id: str
+    name: Optional[str] = None
     bound_at: str
     primary: bool
     online: bool
@@ -193,6 +194,7 @@ class PowerMode(str, Enum):
 
 class DeviceConfig(BaseModel):
     device_id: str
+    name: Optional[str] = None
     led_pattern: LedPattern
     led_morse: str
     report_interval_s: Optional[int] = None
@@ -200,6 +202,7 @@ class DeviceConfig(BaseModel):
 
 
 class DeviceConfigUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=40)
     led_pattern: Optional[LedPattern] = None
     led_morse: Optional[str] = Field(default=None, max_length=15)
     report_interval_s: Optional[int] = Field(default=None, ge=5, le=3600)

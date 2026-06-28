@@ -145,17 +145,25 @@ def _eval_geofences(store: Store, broker: Broker, rec: LocationRecord, owner_id:
             store.update_geofence_state(gf.id, consecutive, open_alert_id, last_inside=False)
 
 
+def _device_label(store: Store, device_id: Optional[str]) -> str:
+    if not device_id:
+        return "设备"
+    cfg = store.get_device_config(device_id)
+    return cfg.name or device_id
+
+
 def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: str,
                   pet_name: str, st: PetSettingsRecord) -> None:
     if rec.battery_pct is None or not st.low_battery_enabled:
         return
     threshold = st.low_battery_threshold if st.low_battery_threshold is not None else settings.low_battery_threshold
-    existing = store.open_alert(rec.pet_id, "low_battery")
+    existing = store.open_alert(rec.pet_id, "low_battery", device_id=rec.device_id)
     if rec.battery_pct <= threshold and existing is None:
+        label = _device_label(store, rec.device_id)
         _create_alert(
             store, broker, user_id=owner_id, pet_id=rec.pet_id, device_id=rec.device_id,
             type_="low_battery", severity="warning",
-            message=f"{pet_name} 的设备电量低（{rec.battery_pct}%），请尽快充电",
+            message=f"{pet_name} 的设备「{label}」电量低（{rec.battery_pct}%），请尽快充电",
             location_point_id=rec.id, deliver=not _in_quiet_hours(st, utcnow()),
         )
     elif rec.battery_pct > threshold and existing is not None:
@@ -239,13 +247,14 @@ def scan_offline(store: Store, broker: Broker, now: Optional[datetime] = None) -
         if not prefs.offline_enabled:
             continue
         offline = st.last_seen is None or (now - st.last_seen) > threshold
-        existing = store.open_alert(pet_id, "offline")
+        existing = store.open_alert(pet_id, "offline", device_id=st.device_id)
         if offline and existing is None:
+            label = _device_label(store, st.device_id)
             _create_alert(
                 store, broker,
                 user_id=pet.owner_id, pet_id=pet_id, device_id=st.device_id,
                 type_="offline", severity="warning",
-                message=f"{pet.name} 的设备已离线，最后在线时间 "
+                message=f"{pet.name} 的设备「{label}」已离线，最后在线时间 "
                         f"{to_iso(st.last_seen) if st.last_seen else '未知'}",
                 location_point_id=None,
                 deliver=not _in_quiet_hours(prefs, now),

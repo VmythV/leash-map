@@ -153,6 +153,7 @@ class PetShareRow(Base):
 class DeviceConfigRow(Base):
     __tablename__ = "device_config"
     device_id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # user nickname
     led_pattern: Mapped[str] = mapped_column(String, default="blink")  # off/solid/blink/morse
     led_morse: Mapped[str] = mapped_column(String, default="SOS")
     report_interval_s: Mapped[Optional[int]] = mapped_column(nullable=True)

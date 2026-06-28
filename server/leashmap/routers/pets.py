@@ -143,6 +143,7 @@ def list_devices(pet_id: str, user: User = Depends(app_auth), store=Depends(get_
         st = to_device_status(store.get_device_status(device_id))
         out.append(DeviceInfo(
             device_id=device_id,
+            name=store.get_device_config(device_id).name,
             bound_at=to_iso(bound_at),
             primary=(device_id == pet.device_id),
             online=st.online if st else False,
@@ -165,6 +166,7 @@ def unbind_device(pet_id: str, device_id: str, user: User = Depends(app_auth), s
 def _to_device_config(rec) -> DeviceConfig:
     return DeviceConfig(
         device_id=rec.device_id,
+        name=rec.name,
         led_pattern=rec.led_pattern,
         led_morse=rec.led_morse,
         report_interval_s=rec.report_interval_s,
