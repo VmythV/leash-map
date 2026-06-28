@@ -83,6 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
             center: center,
             radiusM: gf?.radiusM ?? AppConfig.demoRadiusM,
             trail: s.liveTrail,
+            follow: true,
           ),
           const SizedBox(height: 16),
           _StatusCard(state: s),
