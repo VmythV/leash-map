@@ -5,10 +5,21 @@
 ![Status](https://img.shields.io/badge/status-MVP%20planning-blue)
 ![Scope](https://img.shields.io/badge/scope-pet%20tracking%20system-green)
 ![Docs](https://img.shields.io/badge/docs-product%20%26%20technical%20planning-lightgrey)
+[![CI](https://github.com/VmythV/leash-map/actions/workflows/ci.yml/badge.svg)](https://github.com/VmythV/leash-map/actions/workflows/ci.yml)
 
 LeashMap, also named **领迹** in Chinese, is a pet safety and movement-trail visualization system.
 
 > Brand tagline: See every step they take.
+
+## Quickstart
+
+```bash
+make test            # run every suite: server, simulator, firmware, app
+make demo            # boot the cloud, run the simulator, print trail & alerts
+```
+
+The software MVP loop runs without hardware. See [ARCHITECTURE.md](ARCHITECTURE.md)
+for how the five components fit together and how data flows.
 
 ## Overview
 
