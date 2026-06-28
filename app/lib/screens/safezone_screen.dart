@@ -18,14 +18,30 @@ class SafeZoneScreen extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               children: s.geofences
                   .map((g) => Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.shield_outlined),
-                          title: Text(g.name),
-                          subtitle: Text(
-                              '中心 ${g.centerLat.toStringAsFixed(4)}, ${g.centerLng.toStringAsFixed(4)} · 半径 ${g.radiusM.toStringAsFixed(0)} m'),
-                          trailing: Icon(g.enabled ? Icons.check_circle : Icons.cancel,
-                              color: g.enabled ? Colors.green : Colors.grey),
-                        ),
+                        child: Column(children: [
+                          ListTile(
+                            leading: const Icon(Icons.shield_outlined),
+                            title: Text(g.name),
+                            subtitle: Text(
+                                '中心 ${g.centerLat.toStringAsFixed(4)}, ${g.centerLng.toStringAsFixed(4)} · 半径 ${g.radiusM.toStringAsFixed(0)} m'),
+                            trailing: Switch(
+                              value: g.enabled,
+                              onChanged: (v) => context.read<AppState>().patchGeofence(g.id, {'enabled': v}),
+                            ),
+                          ),
+                          SwitchListTile(
+                            dense: true,
+                            title: const Text('离开提醒'),
+                            value: g.alertOnExit,
+                            onChanged: g.enabled ? (v) => context.read<AppState>().patchGeofence(g.id, {'alert_on_exit': v}) : null,
+                          ),
+                          SwitchListTile(
+                            dense: true,
+                            title: const Text('回家提醒'),
+                            value: g.alertOnEnter,
+                            onChanged: g.enabled ? (v) => context.read<AppState>().patchGeofence(g.id, {'alert_on_enter': v}) : null,
+                          ),
+                        ]),
                       ))
                   .toList(),
             ),

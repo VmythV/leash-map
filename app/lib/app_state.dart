@@ -165,6 +165,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> patchGeofence(String geoId, Map<String, dynamic> fields) async {
+    await api.updateGeofence(pet!.id, geoId, fields);
+    geofences = await api.listGeofences(pet!.id);
+    primaryGeofence = geofences.isNotEmpty ? geofences.first : null;
+    notifyListeners();
+  }
+
+  Future<AlertSettings> loadAlertSettings() => api.getAlertSettings(pet!.id);
+
+  Future<AlertSettings> saveAlertSettings(Map<String, dynamic> patch) =>
+      api.updateAlertSettings(pet!.id, patch);
+
   Future<void> refreshAlerts() async {
     alerts = await api.listAlerts();
     notifyListeners();

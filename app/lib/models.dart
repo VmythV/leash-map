@@ -110,6 +110,8 @@ class Geofence {
   final double centerLng;
   final double radiusM;
   final bool enabled;
+  final bool alertOnExit;
+  final bool alertOnEnter;
 
   Geofence({
     required this.id,
@@ -119,6 +121,8 @@ class Geofence {
     required this.centerLng,
     required this.radiusM,
     required this.enabled,
+    required this.alertOnExit,
+    required this.alertOnEnter,
   });
 
   factory Geofence.fromJson(Map<String, dynamic> j) => Geofence(
@@ -129,6 +133,44 @@ class Geofence {
         centerLng: _toD(j['center_lng']),
         radiusM: _toD(j['radius_m']),
         enabled: j['enabled'] as bool? ?? true,
+        alertOnExit: j['alert_on_exit'] as bool? ?? true,
+        alertOnEnter: j['alert_on_enter'] as bool? ?? false,
+      );
+}
+
+class AlertSettings {
+  final bool exitEnabled;
+  final bool enterEnabled;
+  final bool lowBatteryEnabled;
+  final bool offlineEnabled;
+  final int? lowBatteryThreshold;
+  final int? quietStart;
+  final int? quietEnd;
+  final bool trackingPaused;
+  final int retentionDays;
+
+  AlertSettings({
+    required this.exitEnabled,
+    required this.enterEnabled,
+    required this.lowBatteryEnabled,
+    required this.offlineEnabled,
+    this.lowBatteryThreshold,
+    this.quietStart,
+    this.quietEnd,
+    required this.trackingPaused,
+    required this.retentionDays,
+  });
+
+  factory AlertSettings.fromJson(Map<String, dynamic> j) => AlertSettings(
+        exitEnabled: j['exit_enabled'] as bool? ?? true,
+        enterEnabled: j['enter_enabled'] as bool? ?? false,
+        lowBatteryEnabled: j['low_battery_enabled'] as bool? ?? true,
+        offlineEnabled: j['offline_enabled'] as bool? ?? true,
+        lowBatteryThreshold: _toIntN(j['low_battery_threshold']),
+        quietStart: _toIntN(j['quiet_start']),
+        quietEnd: _toIntN(j['quiet_end']),
+        trackingPaused: j['tracking_paused'] as bool? ?? false,
+        retentionDays: (j['retention_days'] as num?)?.toInt() ?? 30,
       );
 }
 

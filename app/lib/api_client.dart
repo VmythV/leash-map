@@ -89,6 +89,23 @@ class ApiClient {
     return ActivitySummary.fromJson(_json(r) as Map<String, dynamic>);
   }
 
+  Future<AlertSettings> getAlertSettings(String petId) async {
+    final r = await http.get(_u('/v1/pets/$petId/alert-settings'), headers: _headers);
+    return AlertSettings.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
+  Future<AlertSettings> updateAlertSettings(String petId, Map<String, dynamic> patch) async {
+    final r = await http.put(_u('/v1/pets/$petId/alert-settings'),
+        headers: _headers, body: jsonEncode(patch));
+    return AlertSettings.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
+  Future<Geofence> updateGeofence(String petId, String geoId, Map<String, dynamic> patch) async {
+    final r = await http.patch(_u('/v1/pets/$petId/geofences/$geoId'),
+        headers: _headers, body: jsonEncode(patch));
+    return Geofence.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
   Future<List<Geofence>> listGeofences(String petId) async {
     final r = await http.get(_u('/v1/pets/$petId/geofences'), headers: _headers);
     final data = (_json(r) as Map<String, dynamic>)['data'] as List;
