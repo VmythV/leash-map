@@ -275,14 +275,21 @@ class Store:
     def bind(self, device_id: str, pet_id: str) -> datetime:
         bound_at = utcnow()
         with db.SessionLocal() as s:
+            # if this device was bound elsewhere, detach it cleanly
             prev = s.get(BindingRow, device_id)
             if prev:
                 prev_pet = s.get(PetRow, prev.pet_id)
-                if prev_pet:
+                if prev_pet and prev_pet.device_id == device_id:
                     prev_pet.device_id = None
                 s.delete(prev)
-            s.add(BindingRow(device_id=device_id, pet_id=pet_id, bound_at=bound_at))
             pet = s.get(PetRow, pet_id)
+            # single-device semantics: detach the pet's previous device so its
+            # future points no longer attach to this pet
+            if pet and pet.device_id and pet.device_id != device_id:
+                old = s.get(BindingRow, pet.device_id)
+                if old:
+                    s.delete(old)
+            s.add(BindingRow(device_id=device_id, pet_id=pet_id, bound_at=bound_at))
             if pet:
                 pet.device_id = device_id
             s.commit()
