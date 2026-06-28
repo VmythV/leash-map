@@ -78,6 +78,17 @@ class ApiClient {
     return TrailData.fromJson(_json(r) as Map<String, dynamic>);
   }
 
+  Future<ActivitySummary> activity(String petId, DateTime from, DateTime to) async {
+    final r = await http.get(
+      _u('/v1/pets/$petId/activity', {
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
+      }),
+      headers: _headers,
+    );
+    return ActivitySummary.fromJson(_json(r) as Map<String, dynamic>);
+  }
+
   Future<List<Geofence>> listGeofences(String petId) async {
     final r = await http.get(_u('/v1/pets/$petId/geofences'), headers: _headers);
     final data = (_json(r) as Map<String, dynamic>)['data'] as List;

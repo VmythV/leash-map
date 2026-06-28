@@ -6,6 +6,7 @@ import '../config.dart';
 import '../models.dart';
 import '../util.dart';
 import '../widgets/pet_map.dart';
+import 'activity_screen.dart';
 import 'alerts_screen.dart';
 import 'bind_screen.dart';
 import 'safezone_screen.dart';
@@ -96,6 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           Row(children: [
             Expanded(child: _ActionButton(icon: Icons.timeline, label: '轨迹', onTap: () => _go(const TrailScreen()))),
+            const SizedBox(width: 10),
+            Expanded(child: _ActionButton(icon: Icons.insights, label: '活动', onTap: () => _go(const ActivityScreen()))),
             const SizedBox(width: 10),
             Expanded(child: _ActionButton(icon: Icons.shield_outlined, label: '安全区', onTap: () => _go(const SafeZoneScreen()))),
             const SizedBox(width: 10),

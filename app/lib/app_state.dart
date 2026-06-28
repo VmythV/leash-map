@@ -152,6 +152,12 @@ class AppState extends ChangeNotifier {
     return api.trail(pet!.id, start, now.add(const Duration(minutes: 1)));
   }
 
+  Future<ActivitySummary> loadActivity() {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+    return api.activity(pet!.id, start, now.add(const Duration(minutes: 1)));
+  }
+
   Future<void> addGeofence(String name, double lat, double lng, double radiusM) async {
     await api.createGeofence(pet!.id, name: name, centerLat: lat, centerLng: lng, radiusM: radiusM);
     geofences = await api.listGeofences(pet!.id);

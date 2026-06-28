@@ -197,6 +197,25 @@ class Trail(BaseModel):
     points: List[AppLocation]
 
 
+class Stop(BaseModel):
+    lat: float
+    lng: float
+    count: int
+    duration_s: int
+
+
+class ActivitySummary(BaseModel):
+    pet_id: str
+    from_: str = Field(serialization_alias="from")
+    to: str
+    point_count: int
+    distance_m: float
+    moving_points: int
+    active_minutes: float
+    by_hour_m: List[float]
+    stops: List[Stop]
+
+
 # ---------------- App: geofence ----------------
 class GeofenceCreate(BaseModel):
     name: str

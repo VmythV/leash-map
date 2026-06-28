@@ -5,10 +5,11 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
 
+from ..analytics import activity_summary
 from ..config import settings
 from ..deps import app_auth, get_store
 from ..geo import douglas_peucker, haversine_m
-from ..schemas import LatestLocation, Trail, User
+from ..schemas import ActivitySummary, LatestLocation, Trail, User
 from ..store import to_iso
 from ..web import owned_pet, to_app_location, to_device_status
 
@@ -55,4 +56,23 @@ def trail(
         point_count=len(recs),
         distance_m=round(distance, 1),
         points=[to_app_location(r) for r in recs],
+    )
+
+
+@router.get("/{pet_id}/activity", response_model=ActivitySummary)
+def activity(
+    pet_id: str,
+    from_: datetime = Query(alias="from"),
+    to: datetime = Query(...),
+    user: User = Depends(app_auth),
+    store=Depends(get_store),
+):
+    owned_pet(store, user, pet_id)
+    recs = store.trail(pet_id, from_, to)
+    summary = activity_summary(recs)
+    return ActivitySummary(
+        pet_id=pet_id,
+        from_=to_iso(from_),
+        to=to_iso(to),
+        **summary,
     )

@@ -168,6 +168,49 @@ class Alert {
       );
 }
 
+class Stop {
+  final double lat;
+  final double lng;
+  final int count;
+  final int durationS;
+  Stop({required this.lat, required this.lng, required this.count, required this.durationS});
+  factory Stop.fromJson(Map<String, dynamic> j) => Stop(
+        lat: _toD(j['lat']),
+        lng: _toD(j['lng']),
+        count: (j['count'] as num).toInt(),
+        durationS: (j['duration_s'] as num).toInt(),
+      );
+}
+
+class ActivitySummary {
+  final int pointCount;
+  final double distanceM;
+  final int movingPoints;
+  final double activeMinutes;
+  final List<double> byHourM;
+  final List<Stop> stops;
+
+  ActivitySummary({
+    required this.pointCount,
+    required this.distanceM,
+    required this.movingPoints,
+    required this.activeMinutes,
+    required this.byHourM,
+    required this.stops,
+  });
+
+  factory ActivitySummary.fromJson(Map<String, dynamic> j) => ActivitySummary(
+        pointCount: (j['point_count'] as num).toInt(),
+        distanceM: _toD(j['distance_m']),
+        movingPoints: (j['moving_points'] as num).toInt(),
+        activeMinutes: _toD(j['active_minutes']),
+        byHourM: ((j['by_hour_m'] as List?) ?? []).map((e) => _toD(e)).toList(),
+        stops: ((j['stops'] as List?) ?? [])
+            .map((e) => Stop.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
 class TrailData {
   final String petId;
   final int pointCount;
