@@ -30,5 +30,8 @@ class Broker:
         for q in list(self._subs.get(user_id, ())):
             q.put_nowait({"event": event, "data": data})
 
+    def subscriber_count(self) -> int:
+        return sum(len(s) for s in self._subs.values())
+
 
 broker = Broker()

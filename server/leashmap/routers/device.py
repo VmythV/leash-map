@@ -28,10 +28,11 @@ def _commands(store, device_id: str) -> List[Command]:
     return [Command(**c) for c in store.pending_commands(device_id, int(time.time()))]
 
 
-def _resp(store, device_id: str, accepted: int, duplicated: int = 0) -> IngestResponse:
+def _resp(store, device_id: str, accepted: int, duplicated: int = 0, rejected: int = 0) -> IngestResponse:
     return IngestResponse(
         accepted=accepted,
         duplicated=duplicated,
+        rejected=rejected,
         server_ts=to_iso(utcnow()),
         commands=_commands(store, device_id),
     )
@@ -45,8 +46,12 @@ def upload_location(
     broker=Depends(get_broker),
 ):
     result = ingest_location(store, broker, body.device_id, body)
-    accepted = 1 if result == "accepted" else 0
-    return _resp(store, body.device_id, accepted, 1 - accepted)
+    return _resp(
+        store, body.device_id,
+        accepted=1 if result == "accepted" else 0,
+        duplicated=1 if result == "duplicate" else 0,
+        rejected=1 if result == "rejected" else 0,
+    )
 
 
 @router.post("/locations/batch", response_model=IngestResponse)
@@ -56,13 +61,16 @@ def upload_batch(
     store=Depends(get_store),
     broker=Depends(get_broker),
 ):
-    accepted = duplicated = 0
+    accepted = duplicated = rejected = 0
     for p in sorted(body.points, key=lambda x: x.ts):
-        if ingest_location(store, broker, body.device_id, p) == "accepted":
+        r = ingest_location(store, broker, body.device_id, p)
+        if r == "accepted":
             accepted += 1
-        else:
+        elif r == "duplicate":
             duplicated += 1
-    return _resp(store, body.device_id, accepted, duplicated)
+        else:
+            rejected += 1
+    return _resp(store, body.device_id, accepted, duplicated, rejected)
 
 
 @router.post("/heartbeat", response_model=IngestResponse)

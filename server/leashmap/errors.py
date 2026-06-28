@@ -43,12 +43,14 @@ class APIError(Exception):
 
 
 def _envelope(
+    request: Request,
     code: str,
     message: str,
     details: Optional[Dict[str, Any]] = None,
     status_code: int = 400,
 ) -> JSONResponse:
-    body: Dict[str, Any] = {"code": code, "message": message, "request_id": gen_id("req", 6)}
+    request_id = getattr(request.state, "request_id", None) or gen_id("req", 6)
+    body: Dict[str, Any] = {"code": code, "message": message, "request_id": request_id}
     if details is not None:
         body["details"] = details
     return JSONResponse(status_code=status_code, content={"error": body})
@@ -56,12 +58,13 @@ def _envelope(
 
 def install_error_handlers(app) -> None:
     @app.exception_handler(APIError)
-    async def _api_error(_: Request, exc: APIError):  # noqa: ANN202
-        return _envelope(exc.code, exc.message, exc.details, exc.status_code)
+    async def _api_error(request: Request, exc: APIError):  # noqa: ANN202
+        return _envelope(request, exc.code, exc.message, exc.details, exc.status_code)
 
     @app.exception_handler(RequestValidationError)
-    async def _validation(_: Request, exc: RequestValidationError):  # noqa: ANN202
+    async def _validation(request: Request, exc: RequestValidationError):  # noqa: ANN202
         return _envelope(
+            request,
             "invalid_argument",
             "Request validation failed",
             {"errors": exc.errors()},
@@ -69,6 +72,6 @@ def install_error_handlers(app) -> None:
         )
 
     @app.exception_handler(StarletteHTTPException)
-    async def _http(_: Request, exc: StarletteHTTPException):  # noqa: ANN202
+    async def _http(request: Request, exc: StarletteHTTPException):  # noqa: ANN202
         code = _STATUS_CODE.get(exc.status_code, "internal")
-        return _envelope(code, str(exc.detail), None, exc.status_code)
+        return _envelope(request, code, str(exc.detail), None, exc.status_code)

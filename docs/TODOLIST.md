@@ -134,8 +134,8 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 ## 7. Phase 5: Location and Geofence Processing
 
 - [x] Validate latitude and longitude range. (Pydantic schema bounds)
-- [ ] Validate timestamp drift.
-- [ ] Reject impossible speed jumps.
+- [x] Validate timestamp drift. (max_ts_drift_seconds -> rejected)
+- [x] Reject impossible speed jumps. (max_speed_mps vs previous point -> rejected)
 - [x] Store location source:
   - [x] GNSS
   - [x] Cell

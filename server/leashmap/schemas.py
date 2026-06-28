@@ -118,6 +118,7 @@ class IngestResponse(BaseModel):
     ok: bool = True
     accepted: int = 0
     duplicated: int = 0
+    rejected: int = 0
     server_ts: str
     commands: List[Command] = Field(default_factory=list)
 

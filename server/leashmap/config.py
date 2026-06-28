@@ -37,5 +37,11 @@ class Settings(BaseSettings):
     # Trail simplification (Douglas-Peucker) applied when ?downsample=true.
     trail_downsample_epsilon_m: float = 8.0
 
+    # Ingest quality filters. A point is rejected (not stored) when its
+    # timestamp drifts too far from now, or it implies an impossible speed
+    # relative to the previous point.
+    max_ts_drift_seconds: int = 2_592_000  # 30 days
+    max_speed_mps: float = 60.0  # ~216 km/h — far above any pet
+
 
 settings = Settings()

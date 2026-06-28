@@ -11,6 +11,7 @@ from typing import Optional
 from .broker import Broker
 from .config import settings
 from .geo import haversine_m
+from .metrics import metrics
 from .notifications import notifier
 from .schemas import LocationPoint
 from .store import AlertRecord, LocationRecord, Store, to_iso, utcnow
@@ -58,6 +59,8 @@ def _create_alert(
     })
     # out-of-band channels (records a delivery status per channel)
     notifier.dispatch(store, alert)
+    metrics.inc("alerts_created")
+    metrics.inc(f"alerts_created_{type_}")
     return alert
 
 
@@ -107,13 +110,37 @@ def _eval_battery(store: Store, broker: Broker, rec: LocationRecord, owner_id: s
         store.set_alert_status(existing.id, "resolved")
 
 
+def _quality_reject_reason(store: Store, device_id: str, pet_id: Optional[str], p: LocationPoint) -> Optional[str]:
+    """Return a reason string if the point should be rejected, else None."""
+    now = int(utcnow().timestamp())
+    if p.ts <= 0 or abs(now - p.ts) > settings.max_ts_drift_seconds:
+        return "ts_drift"
+    if pet_id:
+        prev = store.latest_for_pet(pet_id)
+        if prev is not None and p.ts > prev.ts:
+            dt = p.ts - prev.ts
+            dist = haversine_m(prev.lat, prev.lng, p.lat, p.lng)
+            if dt > 0 and dist / dt > settings.max_speed_mps:
+                return "speed_jump"
+    return None
+
+
 def ingest_location(store: Store, broker: Broker, device_id: str, p: LocationPoint) -> str:
-    """Process one location point. Returns 'accepted' or 'duplicate'."""
+    """Process one location point. Returns 'accepted', 'duplicate', or 'rejected'."""
     if store.is_duplicate(device_id, p.seq):
+        metrics.inc("locations_duplicate")
         return "duplicate"
 
     pet_id = store.pet_for_device(device_id)
+
+    reason = _quality_reject_reason(store, device_id, pet_id, p)
+    if reason is not None:
+        metrics.inc("locations_rejected")
+        metrics.inc(f"locations_rejected_{reason}")
+        return "rejected"
+
     rec = store.add_location(device_id, pet_id, p)
+    metrics.inc("locations_accepted")
     st = store.touch_device(device_id, battery_pct=p.battery_pct)
 
     if pet_id:
