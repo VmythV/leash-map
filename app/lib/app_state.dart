@@ -65,6 +65,7 @@ class AppState extends ChangeNotifier {
       _applyLatest(ll);
       alerts = await api.listAlerts();
       pets = await api.listPets(); // includes shared pets for the switcher
+      await loadDevices();
 
       _subscribe();
       status = AppStatus.ready;
@@ -108,6 +109,9 @@ class AppState extends ChangeNotifier {
     primaryGeofence = geofences.isNotEmpty ? geofences.first : null;
     _applyLatest(await api.latestLocation(p.id));
     alerts = await api.listAlerts();
+    deviceBattery.clear();
+    deviceOnline.clear();
+    await loadDevices();
     _subscribe();
     notifyListeners();
   }
@@ -121,11 +125,17 @@ class AppState extends ChangeNotifier {
         notifyListeners();
         break;
       case 'device.battery_updated':
-        batteryPct = (e.data['battery_pct'] as num?)?.toInt();
+        final did = e.data['device_id'] as String?;
+        final pct = (e.data['battery_pct'] as num?)?.toInt();
+        if (did != null && pct != null) deviceBattery[did] = pct;
+        batteryPct = pct;
         notifyListeners();
         break;
       case 'device.status_updated':
-        online = e.data['online'] as bool? ?? online;
+        final did = e.data['device_id'] as String?;
+        final isOnline = e.data['online'] as bool? ?? online;
+        if (did != null) deviceOnline[did] = isOnline;
+        online = isOnline;
         notifyListeners();
         break;
       case 'alert.created':
@@ -147,6 +157,8 @@ class AppState extends ChangeNotifier {
       );
 
   List<DeviceInfo> devices = [];
+  final Map<String, int> deviceBattery = {}; // live battery by device id
+  final Map<String, bool> deviceOnline = {};
 
   Future<List<DeviceInfo>> loadDevices() async {
     devices = await api.listDevices(pet!.id);

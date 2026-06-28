@@ -109,6 +109,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 16),
           _StatusCard(state: s),
+          if (s.devices.length > 1) ...[
+            const SizedBox(height: 12),
+            _DevicesBattery(state: s),
+          ],
           const SizedBox(height: 16),
           Row(children: [
             Expanded(child: _ActionButton(icon: Icons.timeline, label: '轨迹', onTap: () => _go(const TrailScreen()))),
@@ -162,6 +166,43 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(s.lostMode ? '已开启寻宠模式，设备将提高上报频率' : '已关闭寻宠模式'),
     ));
+  }
+}
+
+class _DevicesBattery extends StatelessWidget {
+  final AppState state;
+  const _DevicesBattery({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('设备电量', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 6),
+          ...state.devices.map((d) {
+            final batt = state.deviceBattery[d.deviceId] ?? d.batteryPct;
+            final online = state.deviceOnline[d.deviceId] ?? d.online;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(children: [
+                Icon(Icons.circle, size: 8, color: online ? Colors.green : Colors.grey),
+                const SizedBox(width: 8),
+                Expanded(child: Text(d.name?.isNotEmpty == true ? d.name! : d.deviceId)),
+                if (d.primary) const Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Text('主', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ),
+                Icon(Icons.battery_full, size: 16, color: (batt ?? 100) <= 15 ? Colors.red : null),
+                const SizedBox(width: 4),
+                Text('${batt ?? '—'}%'),
+              ]),
+            );
+          }),
+        ]),
+      ),
+    );
   }
 }
 

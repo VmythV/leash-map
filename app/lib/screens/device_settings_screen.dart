@@ -15,6 +15,13 @@ const _powerModes = {
   'saver': '省电',
   'high_accuracy': '高精度',
 };
+const _intervals = {
+  30: '30 秒',
+  60: '1 分钟',
+  120: '2 分钟',
+  300: '5 分钟',
+  600: '10 分钟',
+};
 
 /// Per-device settings (LED / power / name). Targets a specific device id.
 class DeviceSettingsScreen extends StatefulWidget {
@@ -134,6 +141,22 @@ class _DeviceSettingsScreenState extends State<DeviceSettingsScreen> {
                       .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                       .toList(),
                   onChanged: (v) => v == null ? null : _save({'power_mode': v}),
+                ),
+                const Divider(height: 32),
+                Text('上报间隔', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  initialValue: _intervals.containsKey(c.reportIntervalS) ? c.reportIntervalS : null,
+                  decoration: const InputDecoration(
+                    labelText: '上报间隔档位',
+                    hintText: '按模式默认',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: _intervals.entries
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .toList(),
+                  onChanged: (v) => v == null ? null : _save({'report_interval_s': v}),
                 ),
                 const SizedBox(height: 12),
                 const Text('改动会通过下行命令在设备下次上报时下发。',
