@@ -168,6 +168,16 @@ class DeviceBinding(BaseModel):
     bound_at: str
 
 
+class DeviceInfo(BaseModel):
+    device_id: str
+    bound_at: str
+    primary: bool
+    online: bool
+    mode: Optional[str] = None
+    battery_pct: Optional[int] = None
+    last_seen_at: Optional[str] = None
+
+
 class LedPattern(str, Enum):
     off = "off"
     solid = "solid"

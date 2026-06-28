@@ -273,27 +273,52 @@ class Store:
             return [_pet(s.get(PetRow, pid)) for pid in pet_ids if s.get(PetRow, pid)]
 
     def bind(self, device_id: str, pet_id: str) -> datetime:
+        """Bind a device to a pet. A pet may hold many devices; a device maps to
+        one pet. pet.device_id tracks the most-recently-bound "primary" device.
+        """
         bound_at = utcnow()
         with db.SessionLocal() as s:
-            # if this device was bound elsewhere, detach it cleanly
-            prev = s.get(BindingRow, device_id)
-            if prev:
-                prev_pet = s.get(PetRow, prev.pet_id)
-                if prev_pet and prev_pet.device_id == device_id:
-                    prev_pet.device_id = None
-                s.delete(prev)
+            row = s.get(BindingRow, device_id)
+            if row is None:
+                s.add(BindingRow(device_id=device_id, pet_id=pet_id, bound_at=bound_at))
+            else:
+                if row.pet_id != pet_id:
+                    # moving from another pet (router normally blocks this)
+                    prev_pet = s.get(PetRow, row.pet_id)
+                    if prev_pet and prev_pet.device_id == device_id:
+                        prev_pet.device_id = None
+                    row.pet_id = pet_id
+                row.bound_at = bound_at
             pet = s.get(PetRow, pet_id)
-            # single-device semantics: detach the pet's previous device so its
-            # future points no longer attach to this pet
-            if pet and pet.device_id and pet.device_id != device_id:
-                old = s.get(BindingRow, pet.device_id)
-                if old:
-                    s.delete(old)
-            s.add(BindingRow(device_id=device_id, pet_id=pet_id, bound_at=bound_at))
             if pet:
-                pet.device_id = device_id
+                pet.device_id = device_id  # primary = last bound
             s.commit()
         return bound_at
+
+    def devices_for_pet(self, pet_id: str) -> "list[tuple[str, datetime]]":
+        with db.SessionLocal() as s:
+            rows = s.scalars(
+                select(BindingRow).where(BindingRow.pet_id == pet_id)
+                .order_by(BindingRow.bound_at.asc())
+            ).all()
+            return [(r.device_id, _as_utc(r.bound_at)) for r in rows]
+
+    def unbind(self, device_id: str) -> bool:
+        with db.SessionLocal() as s:
+            row = s.get(BindingRow, device_id)
+            if row is None:
+                return False
+            pet = s.get(PetRow, row.pet_id)
+            s.delete(row)
+            s.flush()
+            if pet and pet.device_id == device_id:
+                remaining = s.scalar(
+                    select(BindingRow).where(BindingRow.pet_id == pet.id)
+                    .order_by(BindingRow.bound_at.desc()).limit(1)
+                )
+                pet.device_id = remaining.device_id if remaining else None
+            s.commit()
+            return True
 
     # ---- locations ----
     def is_duplicate(self, device_id: str, seq: int) -> bool:

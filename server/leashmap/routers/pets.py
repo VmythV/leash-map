@@ -17,13 +17,14 @@ from ..schemas import (
     DeviceBinding,
     DeviceConfig,
     DeviceConfigUpdate,
+    DeviceInfo,
     Pet,
     PetCreate,
     ShareRequest,
     User,
 )
 from ..store import to_iso
-from ..web import owned_device, owned_pet
+from ..web import owned_device, owned_pet, to_device_status, viewable_pet
 
 router = APIRouter(prefix="/v1", tags=["pets"])
 
@@ -132,6 +133,33 @@ def update_alert_settings(
         except Exception:
             raise APIError("invalid_argument", f"Unknown timezone: {fields['timezone']}")
     return _to_settings(store.update_pet_settings(pet_id, **fields))
+
+
+@router.get("/pets/{pet_id}/devices")
+def list_devices(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    pet = viewable_pet(store, user, pet_id)
+    out: List[DeviceInfo] = []
+    for device_id, bound_at in store.devices_for_pet(pet_id):
+        st = to_device_status(store.get_device_status(device_id))
+        out.append(DeviceInfo(
+            device_id=device_id,
+            bound_at=to_iso(bound_at),
+            primary=(device_id == pet.device_id),
+            online=st.online if st else False,
+            mode=st.mode.value if st else None,
+            battery_pct=st.battery_pct if st else None,
+            last_seen_at=st.last_seen_at if st else None,
+        ))
+    return {"data": out}
+
+
+@router.delete("/pets/{pet_id}/devices/{device_id}")
+def unbind_device(pet_id: str, device_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
+    owned_pet(store, user, pet_id)
+    if store.pet_for_device(device_id) != pet_id:
+        raise APIError("not_found", "Device is not bound to this pet")
+    store.unbind(device_id)
+    return {"ok": True}
 
 
 def _to_device_config(rec) -> DeviceConfig:

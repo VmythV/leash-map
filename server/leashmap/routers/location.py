@@ -20,7 +20,10 @@ router = APIRouter(prefix="/v1/pets", tags=["location"])
 def latest_location(pet_id: str, user: User = Depends(app_auth), store=Depends(get_store)):
     pet = viewable_pet(store, user, pet_id)
     rec = store.latest_for_pet(pet_id)
-    st = store.get_device_status(pet.device_id) if pet.device_id else None
+    # status of the device that produced the latest point (multi-device aware),
+    # falling back to the pet's primary device
+    dev_id = rec.device_id if rec else pet.device_id
+    st = store.get_device_status(dev_id) if dev_id else None
     return LatestLocation(
         pet_id=pet_id,
         location=to_app_location(rec) if rec else None,

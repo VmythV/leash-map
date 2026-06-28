@@ -192,6 +192,40 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
 
+  /v1/pets/{petId}/devices:
+    get:
+      tags: [pets]
+      summary: List the pet's bound devices (a pet may have several)
+      parameters: [{ $ref: "#/components/parameters/petId" }]
+      responses:
+        "200":
+          description: devices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/DeviceInfo" }
+
+  /v1/pets/{petId}/devices/{deviceId}:
+    delete:
+      tags: [pets]
+      summary: Unbind a device from the pet
+      parameters:
+        - { $ref: "#/components/parameters/petId" }
+        - name: deviceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: unbound
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { type: boolean } } }
+
   /v1/pets/{petId}/lost-mode:
     post:
       tags: [pets]
@@ -587,6 +621,17 @@ components:
         device_id: { type: string }
         pet_id: { type: string }
         bound_at: { type: string, format: date-time }
+
+    DeviceInfo:
+      type: object
+      properties:
+        device_id: { type: string }
+        bound_at: { type: string, format: date-time }
+        primary: { type: boolean }
+        online: { type: boolean }
+        mode: { type: [string, "null"] }
+        battery_pct: { type: [integer, "null"] }
+        last_seen_at: { type: [string, "null"], format: date-time }
 
     DeviceStatus:
       type: object
