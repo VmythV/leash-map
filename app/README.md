@@ -52,12 +52,14 @@ lib/
     pet_map.dart       flutter_map 真实地图（OSM 瓦片 + 安全区 + 轨迹 + 标记）
     mini_map.dart      自包含 Canvas 地图（离线兜底，无瓦片网络）
   screens/
-    home_screen.dart   地图首页（实时位置、状态卡、入口）
+    home_screen.dart   地图首页（实时位置、状态卡、入口、扫码绑定入口）
     trail_screen.dart  轨迹回放（近 24 小时）
     safezone_screen.dart 安全区列表 + 新建
     alerts_screen.dart 告警列表 + 确认
+    bind_screen.dart   扫码绑定设备（mobile_scanner）+ 手动输入兜底
 test/
   widget_test.dart     启动 smoke 测试
+  bind_parse_test.dart 设备 ID 解析单测
 ```
 
 ## 现状与后续
@@ -66,9 +68,12 @@ test/
 轨迹回放、圆形安全区新建、告警列表与确认、SSE 实时更新、自带走动演示。
 
 已实现（补充）：真实地图（flutter_map + OSM）、**镜头平滑跟随**（位置更新时跟随宠物，
-手动拖动释放跟随，定位按钮重新开启）、寻宠模式开关（下行命令）。
+手动拖动释放跟随，定位按钮重新开启）、寻宠模式开关（下行命令）、
+**扫码绑定设备**（mobile_scanner，二维码含 `dev_` ID 或 `?device=` URL；手动输入兜底）。
+
+> Web 扫码需浏览器摄像头权限（HTTPS 或 localhost）；不可用时用手动输入。
 
 后续：
 - [ ] iOS/Android 平台；上线区域切换高德/腾讯（含 GCJ-02 偏移）/Mapbox
-- [ ] 多宠物切换、设备绑定扫码
+- [ ] 多宠物切换
 - [ ] 正式账号体系替代 demo 会话

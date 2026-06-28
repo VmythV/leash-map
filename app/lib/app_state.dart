@@ -120,6 +120,16 @@ class AppState extends ChangeNotifier {
         createdAt: (d['created_at'] ?? '') as String,
       );
 
+  /// Bind a (scanned or typed) device id to the current pet, then refresh.
+  Future<void> rebindDevice(String newDeviceId) async {
+    await api.bindDevice(newDeviceId, pet!.id);
+    deviceId = newDeviceId;
+    liveTrail.clear();
+    final ll = await api.latestLocation(pet!.id);
+    _applyLatest(ll);
+    notifyListeners();
+  }
+
   bool lostMode = false;
 
   Future<void> toggleLostMode() async {

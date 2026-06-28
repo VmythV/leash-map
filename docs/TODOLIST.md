@@ -175,7 +175,7 @@ MVP is complete when a user can bind a device, view the pet's latest location, r
 - [x] Implement startup and environment configuration. (config.dart, --dart-define)
 - [x] Implement login or temporary demo session.
 - [x] Implement pet creation screen. (auto-create on bootstrap)
-- [x] Implement device binding screen. (auto-bind on bootstrap)
+- [x] Implement device binding screen. (auto-bind on bootstrap + QR/manual bind screen)
 - [x] Implement map home screen. (MiniMap)
 - [x] Display pet latest location.
 - [x] Display device online status.

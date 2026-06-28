@@ -7,6 +7,7 @@ import '../models.dart';
 import '../util.dart';
 import '../widgets/pet_map.dart';
 import 'alerts_screen.dart';
+import 'bind_screen.dart';
 import 'safezone_screen.dart';
 import 'trail_screen.dart';
 
@@ -66,6 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(s.pet?.name ?? 'LeashMap'),
         actions: [
+          IconButton(
+            tooltip: '扫码绑定设备',
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: _scanBind,
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 14),
             child: Row(children: [
@@ -120,6 +126,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _go(Widget screen) {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+
+  Future<void> _scanBind() async {
+    final deviceId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BindScreen()),
+    );
+    if (!mounted || deviceId == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('已绑定设备 $deviceId')),
+    );
   }
 
   Future<void> _toggleLost(AppState s) async {
