@@ -7,8 +7,12 @@
 ## 技术栈（Phase 0 已定）
 
 Flutter（Material 3，dark）+ provider 状态管理 + http + intl。
-地图用自包含 **Canvas MiniMap**（CustomPaint，不依赖外部瓦片），MVP 零外部地图 key。
-目标平台先做 **Web**（便于联调），后续可加 iOS/Android。
+地图用 **flutter_map + OpenStreetMap 瓦片**：免 API key、Web/移动端通用、原生支持
+marker/polyline/圆形围栏，输入即 WGS84（无需 GCJ-02 转换）。技术方案里高德/腾讯/Mapbox
+留作上线区域切换（高德/腾讯需做 GCJ-02 偏移）。`widgets/mini_map.dart` 保留为离线
+（无瓦片网络）兜底实现。目标平台先做 **Web**，后续可加 iOS/Android。
+
+> OSM 瓦片在运行时需联网；编译/构建不需要。
 
 ## 快速开始
 
@@ -45,7 +49,8 @@ lib/
   app_state.dart       ChangeNotifier：会话/宠物/实时位置/告警
   util.dart            时间格式化、告警文案
   widgets/
-    mini_map.dart      自包含 Canvas 地图（安全区 + 轨迹 + 标记）
+    pet_map.dart       flutter_map 真实地图（OSM 瓦片 + 安全区 + 轨迹 + 标记）
+    mini_map.dart      自包含 Canvas 地图（离线兜底，无瓦片网络）
   screens/
     home_screen.dart   地图首页（实时位置、状态卡、入口）
     trail_screen.dart  轨迹回放（近 24 小时）
@@ -60,8 +65,9 @@ test/
 已实现：demo 会话、宠物/绑定、地图首页（实时位置/电量/在线/精度/来源）、
 轨迹回放、圆形安全区新建、告警列表与确认、SSE 实时更新、自带走动演示。
 
+已实现（补充）：真实地图（flutter_map + OSM）、寻宠模式开关（下行命令）。
+
 后续：
-- [ ] iOS/Android 平台与真实地图 SDK（高德/腾讯/Mapbox）
+- [ ] iOS/Android 平台；上线区域切换高德/腾讯（含 GCJ-02 偏移）/Mapbox
 - [ ] 多宠物切换、设备绑定扫码
-- [ ] 寻宠模式（下行命令）
 - [ ] 正式账号体系替代 demo 会话

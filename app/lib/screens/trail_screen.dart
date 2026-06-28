@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../config.dart';
 import '../models.dart';
-import '../widgets/mini_map.dart';
+import '../widgets/pet_map.dart';
 
 class TrailScreen extends StatefulWidget {
   const TrailScreen({super.key});
@@ -46,7 +46,7 @@ class _TrailScreenState extends State<TrailScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              MiniMap(center: center, radiusM: gf?.radiusM ?? AppConfig.demoRadiusM, trail: points),
+              PetMap(center: center, radiusM: gf?.radiusM ?? AppConfig.demoRadiusM, trail: points, fitTrail: true),
               const SizedBox(height: 16),
               Card(
                 child: Padding(

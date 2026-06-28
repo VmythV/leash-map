@@ -5,7 +5,7 @@ import '../app_state.dart';
 import '../config.dart';
 import '../models.dart';
 import '../util.dart';
-import '../widgets/mini_map.dart';
+import '../widgets/pet_map.dart';
 import 'alerts_screen.dart';
 import 'safezone_screen.dart';
 import 'trail_screen.dart';
@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          MiniMap(
+          PetMap(
             center: center,
             radiusM: gf?.radiusM ?? AppConfig.demoRadiusM,
             trail: s.liveTrail,
