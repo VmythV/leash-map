@@ -155,6 +155,7 @@ docs/         Product, technical, and decision documents
 | [docs/mvp-development-scope.md](docs/mvp-development-scope.md) | MVP development areas, boundaries, deferred areas, acceptance criteria |
 | [docs/mvp-preparation-and-code-scope.md](docs/mvp-preparation-and-code-scope.md) | Hardware checklist, code scope, parallel development plan, first tasks |
 | [docs/hardware-procurement.md](docs/hardware-procurement.md) | Consolidated, orderable hardware procurement list (P0 dev boards, tools, P1 prototype; LED-only, no buzzer) |
+| [docs/hardware-components.md](docs/hardware-components.md) | Per-component spec: recommended models, role, rationale, firmware mapping, and future expansion points |
 | [docs/TODOLIST.md](docs/TODOLIST.md) | End-to-end MVP build checklist |
 | [docs/detailed-design/README.md](docs/detailed-design/README.md) | Detailed design index for MVP areas |
 | [docs/detailed-design/hardware.md](docs/detailed-design/hardware.md) | Hardware detailed design |
